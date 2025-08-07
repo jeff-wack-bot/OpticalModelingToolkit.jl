@@ -14,6 +14,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Project Plan" => "PROJECT_PLAN.md",
+        "Python-Julia Interoperability" => "PYTHON_JULIA_INTEROP.md", 
+        "Finesse Analysis" => "FINESSE_ANALYSIS.md",
     ],
 )
 
