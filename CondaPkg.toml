@@ -1,0 +1,14 @@
+# PythonCall.jl reads this file via CondaPkg.jl on first `using PythonCall`
+# and creates a project-local Conda environment under .CondaPkg/. No manual
+# Python setup is needed — `julia --project=. -e 'using PythonCall'` is enough.
+#
+# Finesse is on PyPI, not conda-forge, so it goes under [pip.deps]. NumPy and
+# SciPy come from conda-forge because Finesse needs the compiled wheels.
+
+[deps]
+python = ">=3.10,<3.13"
+numpy = ""
+scipy = ""
+
+[pip.deps]
+finesse = ""

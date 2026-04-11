@@ -1,9 +1,8 @@
-# Simplified test for Finesse-Julia interoperability
-# Usage: julia --project=. test_finesse_simple.jl
-
-# Configure PythonCall to use the mtkoptical environment
-ENV["JULIA_CONDAPKG_BACKEND"] = "Null"
-ENV["JULIA_PYTHONCALL_EXE"] = "/home/jeff/miniforge3/envs/mtkoptical/bin/python"
+# Simplified test for Finesse-Julia interoperability.
+#
+# Finesse is installed by CondaPkg.toml at the project root (via pip), so this
+# file does not need any path configuration. Run as part of `julia --project=.
+# -e 'using Pkg; Pkg.test()'`.
 
 using Test
 using PythonCall
