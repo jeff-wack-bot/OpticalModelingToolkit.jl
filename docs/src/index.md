@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = MTKOptical
+CurrentModule = OpticalModelingToolkit
 ```
 
-# MTKOptical
+# OpticalModelingToolkit
 
-Documentation for [MTKOptical](https://github.com/jeff/MTKOptical.jl).
+Documentation for [OpticalModelingToolkit](https://github.com/jeff/OpticalModelingToolkit.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [MTKOptical]
+Modules = [OpticalModelingToolkit]
 ```

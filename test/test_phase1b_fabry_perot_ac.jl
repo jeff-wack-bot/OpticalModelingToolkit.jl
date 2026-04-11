@@ -23,7 +23,7 @@
 # at every point of a logarithmic frequency sweep.
 
 using Test
-using MTKOptical
+using OpticalModelingToolkit
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t
 using NonlinearSolve

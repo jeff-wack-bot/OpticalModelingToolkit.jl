@@ -1,4 +1,4 @@
-# MTKOptical.jl — Refined Design Plan
+# OpticalModelingToolkit.jl — Refined Design Plan
 
 This document supersedes the architecture sections of `PROJECT_PLAN.md`. It is the result of studying the source of Finesse 3, ModelingToolkit.jl, and ModelingToolkitStandardLibrary.jl in `context/`, and reflects design decisions made during that review.
 
@@ -8,20 +8,20 @@ Finesse is a frequency-domain linear field solver with no time-domain integrator
 
 > **MTK's `linearize_symbolic`** (`ModelingToolkit.jl/src/linearization.jl:544`) extracts a symbolic `(A, B, C, D)` state-space form from a nonlinear DAE around an operating point.
 
-This is the seam MTKOptical is designed around. The package uses MTK's DAE machinery to find fixed operating points, then uses `linearize_symbolic` at those points to produce a state-space model from which AC analysis is performed by direct evaluation of `H(iω) = C(iωI − A)⁻¹B + D`. Finesse is used to validate both stages but is not part of the runtime.
+This is the seam OpticalModelingToolkit is designed around. The package uses MTK's DAE machinery to find fixed operating points, then uses `linearize_symbolic` at those points to produce a state-space model from which AC analysis is performed by direct evaluation of `H(iω) = C(iωI − A)⁻¹B + D`. Finesse is used to validate both stages but is not part of the runtime.
 
 ## 2. The Hybrid Approach
 
-MTKOptical components produce DAE equations in time. The same component definition serves two analysis modes:
+OpticalModelingToolkit components produce DAE equations in time. The same component definition serves two analysis modes:
 
 - **DC operating point**: solve the DAE for steady state via MTK's nonlinear solver path.
 - **Small-signal AC analysis**: call `linearize_symbolic` at the operating point and evaluate `H(iω)` at the frequencies of interest.
 
 ## 3. Domain Coverage
 
-The constraint that everything must be expressible as a real-valued MTK DAE determines what MTKOptical can and cannot model. The relationship to Finesse is roughly orthogonal — there is large mutual coverage of "control-systems optics," and large parts of each tool that the other cannot reach.
+The constraint that everything must be expressible as a real-valued MTK DAE determines what OpticalModelingToolkit can and cannot model. The relationship to Finesse is roughly orthogonal — there is large mutual coverage of "control-systems optics," and large parts of each tool that the other cannot reach.
 
-### What MTKOptical can model
+### What OpticalModelingToolkit can model
 
 - Passive linear optical networks (mirrors, beamsplitters, spaces, lenses as thin elements).
 - Lasers as carrier-amplitude sources with amplitude/phase modulation inputs.
@@ -33,18 +33,18 @@ The constraint that everything must be expressible as a real-valued MTK DAE dete
 - Closed-loop length and frequency control of cavities, including the full electro-mechanical loop.
 - Audio-band sideband transfer functions via linearization at the DC operating point.
 
-### What MTKOptical cannot (and will not) model
+### What OpticalModelingToolkit cannot (and will not) model
 
 - Higher-order Hermite-Gaussian spatial modes (Phase 5+ research, see §10).
 - Gaussian beam tracing, beam parameter propagation, ABCD-matrix mode matching.
 - Mode-mismatch loss, alignment sensing, knife-edge scattering, clipping losses — anything that requires a spatial profile.
 - Nonlinear optics (second-harmonic generation, parametric down-conversion, Kerr effects).
 - Quantum noise as a primitive (radiation-pressure quantum noise, shot noise) — this requires a separate Heisenberg-Langevin layer on top of linearized models, which is a research project.
-- Fast carrier dynamics — MTKOptical works on the slowly-varying envelope. Anything faster than the simulation timestep is out of reach by construction.
+- Fast carrier dynamics — OpticalModelingToolkit works on the slowly-varying envelope. Anything faster than the simulation timestep is out of reach by construction.
 
-### Where MTKOptical exceeds Finesse
+### Where OpticalModelingToolkit exceeds Finesse
 
-These are the things MTKOptical can do that Finesse cannot, and which justify building a new tool rather than just driving Finesse from Julia:
+These are the things OpticalModelingToolkit can do that Finesse cannot, and which justify building a new tool rather than just driving Finesse from Julia:
 
 - **Time-domain transients with full nonlinear electronics in the loop.** Finesse has no time-domain solver.
 - **Digital control loops with arbitrary sample-and-hold and quantization.** Finesse's `Lock` action is a thin abstraction; MTK can model the full DSP chain.
@@ -53,7 +53,7 @@ These are the things MTKOptical can do that Finesse cannot, and which justify bu
 
 ### The overlap with Finesse
 
-For passive optical networks driven at DC with audio-band sidebands and mechanical/electrical coupling, the two tools should give bit-identical results within numerical tolerance. **That overlap is the entire validation surface** — every MTKOptical component will be tested by building the equivalent Finesse model in Python and comparing.
+For passive optical networks driven at DC with audio-band sidebands and mechanical/electrical coupling, the two tools should give bit-identical results within numerical tolerance. **That overlap is the entire validation surface** — every OpticalModelingToolkit component will be tested by building the equivalent Finesse model in Python and comparing.
 
 ## 4. Connector Design
 
@@ -80,11 +80,11 @@ Optical components with mechanical or electrical ports follow the same pattern. 
 - A `Translational.MechanicalPort` `mech` for longitudinal motion.
 - Constitutive equations giving the field scattering and the radiation pressure force as a function of incident power.
 
-This is the strongest single argument that MTKOptical fits cleanly into the MTK ecosystem rather than fighting it. The cross-domain pattern is already established and tested in the standard library; we are just adding optics as another domain.
+This is the strongest single argument that OpticalModelingToolkit fits cleanly into the MTK ecosystem rather than fighting it. The cross-domain pattern is already established and tested in the standard library; we are just adding optics as another domain.
 
 ## 6. Exporter Strategy
 
-Finesse models are built from Julia by walking the MTKOptical component tree and constructing a live Python `finesse.Model` object via PythonCall. Each MTKOptical component implements one method:
+Finesse models are built from Julia by walking the OpticalModelingToolkit component tree and constructing a live Python `finesse.Model` object via PythonCall. Each OpticalModelingToolkit component implements one method:
 
 ```julia
 to_finesse(component, model::Py)
@@ -150,7 +150,7 @@ In rough priority order:
 2. **Operating-point convergence.** Optical interferometers have many near-degenerate operating points (multiple cavity longitudinal modes). MTK's nonlinear solver may need careful initial guesses. Finesse handles this by solving the carrier first; we don't get that for free.
 3. **Complex amplitudes as real pairs.** Workable but doubles equation count and obscures formulas. Worth checking whether `Symbolics.@variables x(t)::Complex` survives through `mtkcompile`; if it does, prefer it.
 4. **Round-trip exporter parameter mapping.** Finesse's parameter validation is strict. Every component needs an exporter test from day one.
-5. **Performance ceiling at scale.** MTKOptical will not compete with Finesse on LIGO-scale models with thousands of HOMs. We compete on composability and electro-mechanical coupling, not on raw matrix size.
+5. **Performance ceiling at scale.** OpticalModelingToolkit will not compete with Finesse on LIGO-scale models with thousands of HOMs. We compete on composability and electro-mechanical coupling, not on raw matrix size.
 6. **Higher-order modes** require a fundamentally different approach (see §10) and should not be attempted under the current architecture.
 7. **Quantum noise** is a research project, not a feature.
 
@@ -158,7 +158,7 @@ In rough priority order:
 
 Finesse's most distinctive feature is its Hermite-Gaussian mode expansion: every optical node carries an array indexed by `(n, m)` HOM pairs, beam parameters propagate via ABCD matrices, and components have HOM-coupling matrices computed by Cython kernels in `finesse3/src/finesse/components/modal/*.pyx`. This is intrinsically a per-frequency, per-mode-pair linear algebra problem that does not decompose cleanly into MTK symbolic equations.
 
-Studying this system and assessing what a Julia migration would look like is its own interesting investigation, separate from the MTKOptical core. Open questions for that investigation:
+Studying this system and assessing what a Julia migration would look like is its own interesting investigation, separate from the OpticalModelingToolkit core. Open questions for that investigation:
 
 - Where does the Hermite-Gaussian basis enter the Finesse equations, and is the basis-dependence purely a per-component coupling matrix or does it interact with the network topology?
 - Could the mode-coupling matrices be precomputed once per geometry change and then plugged into MTK as `@register_symbolic` opaque functions, leaving the per-mode field amplitudes as MTK variables?

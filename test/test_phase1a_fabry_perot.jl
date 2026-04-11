@@ -18,7 +18,7 @@
 # at machine precision.
 
 using Test
-using MTKOptical
+using OpticalModelingToolkit
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t
 using NonlinearSolve
