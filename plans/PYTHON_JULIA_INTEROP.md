@@ -229,7 +229,7 @@ class TestJuliaPythonInterop(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures before each test method."""
-        # Activate the MTKOptical Julia project if it exists
+        # Activate the OpticalModelingToolkit Julia project if it exists
         try:
             jl.seval('import Pkg; Pkg.activate(".")')
         except:

@@ -1,4 +1,4 @@
-name = "MTKOptical"
+name = "OpticalModelingToolkit"
 uuid = "bb4db5ec-ef24-4afd-b24a-b7700d736f30"
 authors = ["Jeff Wack <jeffwack111@gmail.com> and contributors"]
 version = "1.0.0-DEV"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# setup.sh — bootstrap a fresh checkout of MTKOptical.jl for development.
+# setup.sh — bootstrap a fresh checkout of OpticalModelingToolkit.jl for
+# development.
 #
 # What this does:
 #   1. Clones finesse3, ModelingToolkit.jl, and ModelingToolkitStandardLibrary.jl

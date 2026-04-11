@@ -1,7 +1,7 @@
-using MTKOptical
+using OpticalModelingToolkit
 using Test
 
-@testset "MTKOptical.jl" begin
+@testset "OpticalModelingToolkit.jl" begin
 
     @testset "Finesse Integration Tests" begin
         include("test_finesse_simple.jl")

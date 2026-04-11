@@ -66,9 +66,9 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using MTKOptical
-          DocMeta.setdocmeta!(MTKOptical, :DocTestSetup, :(using MTKOptical); recursive=true)
-          doctest(MTKOptical)
+          using OpticalModelingToolkit
+          DocMeta.setdocmeta!(OpticalModelingToolkit, :DocTestSetup, :(using OpticalModelingToolkit); recursive=true)
+          doctest(OpticalModelingToolkit)
   runic:
     name: Runic formatting
     runs-on: ubuntu-latest

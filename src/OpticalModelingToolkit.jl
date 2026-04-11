@@ -1,7 +1,7 @@
-module MTKOptical
+module OpticalModelingToolkit
 
-# MTKOptical adds an optical physical domain to ModelingToolkit. See
-# plans/REFINED_PLAN.md for the full design.
+# OpticalModelingToolkit adds an optical physical domain to ModelingToolkit.
+# See plans/REFINED_PLAN.md for the full design.
 
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
@@ -20,4 +20,4 @@ export OpticalIn, OpticalOut
 include("components.jl")
 export Mirror, Length, LengthDelay, Laser, LaserModulated, Vacuum
 
-end # module MTKOptical
+end # module OpticalModelingToolkit
