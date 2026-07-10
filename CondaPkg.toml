@@ -5,8 +5,10 @@
 # Finesse is on PyPI, not conda-forge, so it goes under [pip.deps]. NumPy and
 # SciPy come from conda-forge because Finesse needs the compiled wheels.
 
+# (<3.14: finesse 3.0.0 ships cp313 wheels; the old <3.13 cap predates them
+# and conflicts with downstream projects pinning python 3.13)
 [deps]
-python = ">=3.10,<3.13"
+python = ">=3.10,<3.14"
 numpy = ""
 scipy = ""
 
