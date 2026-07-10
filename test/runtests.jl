@@ -15,4 +15,8 @@ using Test
         include("test_phase1b_fabry_perot_ac.jl")
     end
 
+    @testset "Co-sim components" begin
+        include("test_cosim_components.jl")
+    end
+
 end

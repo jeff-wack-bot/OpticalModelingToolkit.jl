@@ -20,4 +20,7 @@ export OpticalIn, OpticalOut
 include("components.jl")
 export Mirror, Length, LengthDelay, Laser, LaserModulated, Vacuum
 
+include("cosim_components.jl")
+export Photodetector, MovableMirror
+
 end # module OpticalModelingToolkit
