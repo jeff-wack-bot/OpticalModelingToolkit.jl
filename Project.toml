@@ -5,24 +5,36 @@ version = "1.0.0-DEV"
 
 [deps]
 CondaPkg = "992eb4ea-22a4-4c89-a5bb-47a3300528ab"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 ModelingToolkitStandardLibrary = "16a59e39-deab-5bd0-87e4-056b12336739"
 PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
+SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
+[weakdeps]
+Etalon = "c755a3c6-72fa-48ae-ae4e-f761e3a8cbf3"
+
+[extensions]
+OpticalModelingToolkitEtalonExt = "Etalon"
 
 [compat]
 CondaPkg = "0.2"
+ControlSystemsBase = "1"
+Etalon = "0.1"
+LinearAlgebra = "1"
 ModelingToolkit = "11"
 ModelingToolkitStandardLibrary = "2"
 PythonCall = "0.9.26"
+SymbolicIndexingInterface = "0.3"
 Symbolics = "7"
 julia = "1.11"
 
 [extras]
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["LinearAlgebra", "NonlinearSolve", "SciMLBase", "Test"]
+test = ["ControlSystemsBase", "NonlinearSolve", "SciMLBase", "Test"]

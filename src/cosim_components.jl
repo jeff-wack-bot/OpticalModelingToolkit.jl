@@ -14,6 +14,7 @@
 # any other component.
 
 @component function Photodetector(; name)
+    meta = [OpticalComponent => (kind = :Photodetector,)]
     systems = @named begin
         port_in = OpticalIn()
         port_out = OpticalOut()
@@ -29,7 +30,8 @@
         port_out.a[2] ~ 0,
     ]
 
-    return System(equations, t, [P], []; name, systems, guesses = [P => 0.0])
+    return System(equations, t, [P], []; name, systems, metadata = meta,
+        guesses = [P => 0.0])
 end
 
 # -----------------------------------------------------------------------------
@@ -40,7 +42,7 @@ end
 # (an `[input = true]` signal, to be driven by a mechanical oscillator or a
 # controller). Displacement by `x` toward the *front* side lengthens the
 # back-side round trip and shortens the front-side one, so with the
-# propagation convention `out = e^{ikL} in` of `Length`:
+# propagation convention `out = e^{ikL} in` of `FreeSpace`:
 #
 #     b_out.a = t·f_in.a + r·e^{+2ikx}·b_in.a
 #     f_out.a = -r·e^{-2ikx}·f_in.a + t·b_in.a
@@ -52,6 +54,8 @@ end
 
 @component function MovableMirror(; name, R = 0.99, T = nothing, λ = 1064e-9)
     Tval = T === nothing ? 1 - R : T
+    meta = [OpticalComponent =>
+        (kind = :MovableMirror, r = sqrt(R), t = sqrt(Tval))]
     pars = @parameters begin
         mr = sqrt(R), [description = "Amplitude reflectivity"]
         mt = sqrt(Tval), [description = "Amplitude transmissivity"]
@@ -83,5 +87,6 @@ end
         f_out.a[2] ~ -mr * (-sθ * f_in.a[1] + cθ * f_in.a[2]) + mt * b_in.a[2],
     ]
 
-    return System(equations, t, [x], pars; name, systems, guesses = [x => 0.0])
+    return System(equations, t, [x], pars; name, systems, metadata = meta,
+        guesses = [x => 0.0])
 end
