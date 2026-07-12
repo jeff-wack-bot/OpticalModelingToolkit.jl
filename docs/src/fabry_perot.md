@@ -61,40 +61,43 @@ that makes a real-valued lossless dielectric mirror unitary.
 The parameter symbols are named `mr`/`mt` rather than `r`/`t` because `t`
 would shadow MTK's time variable inside the component constructor.
 
-### `Length(L, λ)`
+### `FreeSpace(L, λ, c, rep)`
 
-Algebraic phase rotation: `out.a = exp(ikL) * in.a` with `k = 2π/λ`,
-expanded to its real and imaginary components. Unidirectional — to wire
-two mirrors face-to-face you instantiate one `Length` for each direction.
+Free-space propagation over length `L`: physically
+`out(t) = R(2πL/λ) · in(t − L/c)` — a static phase rotation of the envelope
+times a pure delay. Unidirectional — to wire two mirrors face-to-face you
+instantiate one `FreeSpace` for each direction.
 
-### `LengthDelay(L, λ, c)`
+The rotation is always exact and algebraic; `rep::PropagationRep` chooses how
+the delay is represented, per analysis, threaded in from the top of a model
+(how propagation is represented is an analysis-time choice, not an element
+identity — `plans/PLAN_rationalize_late.md` §2):
 
-Single-pole approximation of free-space delay:
+- `Algebraic()` (default) — no dynamics, no states; the adiabatic limit,
+  exact at DC.
+- `PadeDelay(n)` — a cascade of `n` first-order **all-pass** sections
+  `H₁(s) = (1 − sθ/2)/(1 + sθ/2)`, `θ = τ/n`, applied identically to both
+  quadratures. `|H₁(iω)| ≡ 1` exactly, so passivity/energy conservation holds
+  at every order; only phase is approximate (per-section error `(ωθ)³/12`,
+  total `∝ n⁻²` at fixed `ωτ`). Cavity FSR physics is representable once
+  `n ≳ ωτ` over the band of interest — a convergence knob, not a wall. Costs
+  `2n` states per instance.
 
-```
-τ ȯ + o = exp(ikL) i,    τ = L / c
-```
-
-At DC this matches `Length` exactly. At higher modulation frequencies the
-response rolls off as `1/(1 + iωτ)`, a one-pole approximation of the true
-`e^{−iωτ}` delay.
-
-**Why have both `Length` and `LengthDelay`?** A purely algebraic network
-has zero state variables, so `linearize_symbolic` returns only `D` and
-`H(iω)` is constant. Promoting propagation to a state-bearing form is what
-makes the AC analysis non-trivial; the algebraic version is kept for the
-DC test because it has no temporal artifacts to confound the steady-state
-comparison. The single-pole form is a deliberate stand-in — good enough to
-exercise the linearization machinery and recover an analytical transfer
-function, but not a faithful distributed delay model.
+For exact delays in the frequency domain, skip rationalization entirely:
+[`to_scattering`](@ref) lowers the composed model to the transcendental
+scattering form (each `FreeSpace` an exact `e^{-sτ}`), and with Etalon loaded
+`Etalon.ScatteringSystem(model)` evaluates it directly.
 
 ### `Laser(A, ϕ)` and `LaserModulated(A, ϕ)`
 
 `Laser` emits a fixed complex envelope `(A cos ϕ, A sin ϕ)` from `port_out`
-and absorbs whatever returns on `port_in`. `LaserModulated` is the same
-plus a small-signal in-phase amplitude perturbation `δA(t)` declared with
-`[input = true]`, defaulting to zero. The variable does nothing at the DC
-operating point; its purpose is to be a designated linearization input.
+and absorbs whatever returns on `port_in`. `LaserModulated` is the same plus
+small-signal perturbations of both carrier-frame quadratures declared with
+`[input = true]` and defaulting to zero: `δA(t)` in phase with the carrier
+(amplitude modulation) and `δQ(t)` in quadrature (phase modulation to first
+order), emitting `(A + δA + i δQ) e^{iϕ}`. They do nothing at the DC
+operating point; their purpose is to be designated linearization inputs that
+span the full quadrature pair.
 
 ### `Vacuum()`
 
@@ -117,8 +120,8 @@ Laser ──> M1 ──L_fwd──> M2 ──> Vacuum
 
 ### `test_phase1a_fabry_perot.jl`
 
-Algebraic `Length`, constant `Laser`. The full network is purely
-algebraic, so `mtkcompile` produces an equation-only system that is solved
+`FreeSpace` in its algebraic representation, constant `Laser`. The full
+network is purely algebraic, so `mtkcompile` produces an equation-only system that is solved
 as a `NonlinearProblem` with `NewtonRaphson`. The test computes:
 
 - `m1.f_out.a` — the right-going intracavity field at M1's front face,
@@ -139,44 +142,41 @@ is a valid initial guess for a linear algebraic system.
 
 ### `test_phase1b_fabry_perot_ac.jl`
 
-Dynamic `LengthDelay`, `LaserModulated`. The cavity now has 4 state
-variables (two quadratures × two length elements). The test calls
+`FreeSpace(rep = PadeDelay(1))`, `LaserModulated`. The cavity has 4 state
+variables (two quadratures × two propagation directions × one all-pass
+section). The AC path is the ecosystem route documented in
+[Solver strategy](solvers.md):
 
 ```julia
-(; A, B, C, D), ssys = ModelingToolkit.linearize_symbolic(
-    fp,
-    [laser.δA],                           # input
-    [m1.f_out.a[1], m1.f_out.a[2]],       # outputs (real, imag quadratures)
-)
+mats, _ = linearize_proper(fp, [laser.δA, laser.δQ],
+    [m1.f_out.a[1], m1.f_out.a[2]])
+sys = ss(mats...)
+freqresp(sys, ωs)
 ```
 
-and asserts shape `(4×4, 4×1, 2×4, 2×1)`. The symbolic matrices are
-substituted to numbers by walking `parameters(ssys)` and binding each
-parameter to its constructor-time `getdefault` value via
-`ModelingToolkit.fixpoint_sub`. The system is then verified to be
-asymptotically stable: every eigenvalue of `A` has strictly negative real
-part.
-
-The numerical transfer function is
+The two real outputs (quadratures of the field response to the in-phase
+drive) are recombined into a single complex field transfer function and
+compared against the representation-parameterized analytic reference
 
 ```
-H_num(ω) = v[1] + i v[2],   v = C (iωI − A)⁻¹ B + D
+H(s) = t1 / (1 + r1 r2 P(s)²),    P(s) = e^{ikL} (1 − sτ/2)/(1 + sτ/2)
 ```
 
-— the two real outputs (real and imaginary quadratures of the field
-response) are recombined into a single complex field transfer function.
-This is compared against the analytical single-pole-delay cavity response
-
-```
-H(ω) = t1 (1 + iωτ)² / [(1 + iωτ)² + r1 r2 exp(2ikL)]
-```
-
-at 25 logarithmically-spaced frequencies from 100 Hz to 100 MHz, at
-`rtol = 1e-8`. In practice the maximum relative error across the sweep
-is ~`5 × 10⁻¹⁴`. The DC value is checked separately against
-`t1 / (1 − r1 r2)`.
+at 25 logarithmically-spaced frequencies from 100 Hz to 100 MHz. Because the
+all-pass section has exact unit magnitude, `|H|` is exact at every frequency
+and only the phase carries the representation error. `poles` and `dcgain`
+(`t1/(1 − r1 r2)` on resonance) are checked through ControlSystemsBase, and
+the whole sweep is cross-checked against the hand-rolled symbolic oracle
+(`linearize_symbolic` → `fixpoint_sub` → `C(iωI−A)⁻¹B + D`), which is kept
+for pedagogy only.
 
 The cavity length is chosen as an odd multiple of `λ/4` so that
 `exp(2ikL) = −1` (resonance under our scattering convention) and the
 intracavity buildup is real to within the floating-point representation
 of `2π L / λ`.
+
+Beyond these two, `test/test_propagation.jl` carries the representation
+validation ladder (all-pass unit magnitude, `n⁻²` phase-error scaling,
+Fabry-Perot convergence to the exact delay response, FSR-peak location,
+audio-band representation invariance) and `test/test_scattering.jl` the
+transcendental bridge and the A-matrix two-photon keystone test.
