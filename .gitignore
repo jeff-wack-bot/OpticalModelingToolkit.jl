@@ -1,6 +1,7 @@
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
+/docs/src/generated/
 
 # Local Python interpreters / installers — never commit
 Miniforge3-*.sh
