@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Michelson interferometer · OpticalModelingToolkit.jl</title><meta name="title" content="Michelson interferometer · OpticalModelingToolkit.jl"/><meta property="og:title" content="Michelson interferometer · OpticalModelingToolkit.jl"/><meta property="twitter:title" content="Michelson interferometer · OpticalModelingToolkit.jl"/><meta name="description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="twitter:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_michelson/"/><meta property="twitter:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_michelson/"/><link rel="canonical" href="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_michelson/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OpticalModelingToolkit.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../design/">Design</a></li><li><a class="tocitem" href="../../solvers/">Solver strategy</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../test_fabry_perot_ac/">Fabry-Perot AC transfer function</a></li><li><a class="tocitem" href="../test_fabry_perot_dc/">Fabry-Perot DC operating point</a></li><li class="is-active"><a class="tocitem" href>Michelson interferometer</a><ul class="internal"><li><a class="tocitem" href="#The-DC-fringe"><span>The DC fringe</span></a></li><li><a class="tocitem" href="#The-exact-antisymmetric-port-response"><span>The exact antisymmetric-port response</span></a></li></ul></li><li><a class="tocitem" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition</a></li><li><a class="tocitem" href="../test_propagation/">Propagation representations</a></li><li><a class="tocitem" href="../test_scattering/">The transcendental scattering bridge</a></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Michelson interferometer</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Michelson interferometer</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl/blob/main/test/test_michelson.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Michelson-interferometer"><a class="docs-heading-anchor" href="#Michelson-interferometer">Michelson interferometer</a><a id="Michelson-interferometer-1"></a><a class="docs-heading-anchor-permalink" href="#Michelson-interferometer" title="Permalink"></a></h1><p>A <code>Beamsplitter</code> splits the laser into two arms closed by perfectly reflecting end mirrors; the returning beams recombine at the beamsplitter, and a photodetector watches the antisymmetric port.</p><pre><code class="nohighlight hljs">                 ey
+                 ║ Ly
+                 p2
+    Laser ── p1 [bs] p3 ══ Lx ══ ex
+                 p4
+                 │
+                 pd</code></pre><p>Light entering <code>p1</code> reflects out of <code>p2</code> (the y arm) and transmits out of <code>p3</code> (the x arm). Back at the beamsplitter, the y return transmits to <code>p4</code> and the x return reflects there with <span>$-r$</span>, so the antisymmetric field is</p><p class="math-container">\[E_\mathrm{AS} = r t A \left(e^{2ikL_y} - e^{2ikL_x}\right),
+\qquad P_\mathrm{AS} = 4 R T A^2 \sin^2 k(L_y - L_x).\]</p><pre><code class="language-julia hljs">using Test
+using OpticalModelingToolkit
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t
+using NonlinearSolve
+using LinearAlgebra
+
+const λ_mi = 1064.0e-9
+const c_mi = 299792458.0
+
+function michelson(; Lx, Ly, R = 0.5, laser = LaserModulated)
+    @named src = laser()
+    @named bs = Beamsplitter(; R)
+    @named sx = FreeSpace(L = Lx, λ = λ_mi)
+    @named sy = FreeSpace(L = Ly, λ = λ_mi)
+    @named ex = Mirror(R = 1.0)
+    @named ey = Mirror(R = 1.0)
+    @named vx = Vacuum()
+    @named vy = Vacuum()
+    @named pd = Photodetector()
+    eqs = [
+        link(src.p1, bs.p1)
+        link(bs.p2, sy.p1)
+        link(sy.p2, ey.p1)
+        link(ey.p2, vy.p1)
+        link(bs.p3, sx.p1)
+        link(sx.p2, ex.p1)
+        link(ex.p2, vx.p1)
+        link(bs.p4, pd.p1)
+    ]
+    @named mich = System(eqs, t; systems = [src, bs, sx, sy, ex, ey, vx, vy, pd])
+    return mich, (; src, bs, pd)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">michelson (generic function with 1 method)</code></pre><h2 id="The-DC-fringe"><a class="docs-heading-anchor" href="#The-DC-fringe">The DC fringe</a><a id="The-DC-fringe-1"></a><a class="docs-heading-anchor-permalink" href="#The-DC-fringe" title="Permalink"></a></h2><p>Stepping the arm-length difference through half a wavelength sweeps the antisymmetric port from dark to bright and back; the symmetric port (back toward the laser) carries the rest of the power.</p><pre><code class="language-julia hljs">@testset &quot;Michelson DC fringe and energy conservation&quot; begin
+    Lx = 1.0
+    for R in (0.5, 0.3), ΔL in range(0, λ_mi / 2; length = 7)
+        mich, c = michelson(; Lx, Ly = Lx + ΔL, R, laser = Laser)
+        sys = mtkcompile(mich)
+        sol = solve(NonlinearProblem(sys, Dict(u =&gt; 0.0 for u in unknowns(sys))))
+        k = 2π / λ_mi
+        P_as = abs2(sqrt(R * (1 - R)) * (cis(2k * (Lx + ΔL)) - cis(2k * Lx)))
+        # arm phases 2kL ~ 1e7 rad: trig roundoff limits agreement to ~1e-9
+        @test sol[c.pd.P] ≈ P_as atol = 1.0e-8
+        P_sym = sol[c.src.p1.i.a[1]]^2 + sol[c.src.p1.i.a[2]]^2
+        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-10
+    end
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;Michelson DC fringe and energy conservation&quot;, false, true, false, &quot;test_michelson.md&quot;, 1.792221304332574e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 28, 1.79222130622319e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="The-exact-antisymmetric-port-response"><a class="docs-heading-anchor" href="#The-exact-antisymmetric-port-response">The exact antisymmetric-port response</a><a id="The-exact-antisymmetric-port-response-1"></a><a class="docs-heading-anchor-permalink" href="#The-exact-antisymmetric-port-response" title="Permalink"></a></h2><p><code>to_scattering</code> needs no beamsplitter-specific code: it reads the scattering table each component stamps into its metadata. The exact transfer function from the laser to the detector, with arm delays <span>$\tau_{x,y} = L_{x,y}/c$</span>, is</p><p class="math-container">\[G(i\Omega) = r t \left(e^{2i(kL_y - \Omega\tau_y)} - e^{2i(kL_x - \Omega\tau_x)}\right).\]</p><pre><code class="language-julia hljs">@testset &quot;to_scattering through a beamsplitter&quot; begin
+    Lx, Ly = 1.0, 1.3
+    mich, _ = michelson(; Lx, Ly, R = 0.4)
+    parts = to_scattering(mich)
+    iu = findfirst(==(:src), parts.u)
+    iy = findfirst(==(:pd), parts.y)
+    k = 2π / λ_mi
+    r, τ = sqrt(0.4), sqrt(0.6)
+    for f in (0.0, 1.0e3, 1.0e6, 7.7e7, 3.0e8)
+        s = im * 2π * f
+        G = parts.M3 * ((Diagonal(exp.(s .* parts.delays)) - parts.M1) \ parts.M2) + parts.M4
+        expected = r * τ * (exp(2im * k * Ly - 2s * Ly / c_mi) - exp(2im * k * Lx - 2s * Lx / c_mi))
+        @test G[iy, iu] ≈ expected rtol = 1.0e-9
+    end
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;to_scattering through a beamsplitter&quot;, false, true, false, &quot;test_michelson.md&quot;, 1.792221306326219e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 5, 1.792221307702981e9, 0x01, ReentrantLock(), Any[])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_fabry_perot_dc/">« Fabry-Perot DC operating point</a><a class="docs-footer-nextpage" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 07:15">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>The transcendental scattering bridge · OpticalModelingToolkit.jl</title><meta name="title" content="The transcendental scattering bridge · OpticalModelingToolkit.jl"/><meta property="og:title" content="The transcendental scattering bridge · OpticalModelingToolkit.jl"/><meta property="twitter:title" content="The transcendental scattering bridge · OpticalModelingToolkit.jl"/><meta name="description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="twitter:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_scattering/"/><meta property="twitter:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_scattering/"/><link rel="canonical" href="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_scattering/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OpticalModelingToolkit.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../design/">Design</a></li><li><a class="tocitem" href="../../solvers/">Solver strategy</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../test_fabry_perot_ac/">Fabry-Perot AC transfer function</a></li><li><a class="tocitem" href="../test_fabry_perot_dc/">Fabry-Perot DC operating point</a></li><li><a class="tocitem" href="../test_michelson/">Michelson interferometer</a></li><li><a class="tocitem" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition</a></li><li><a class="tocitem" href="../test_propagation/">Propagation representations</a></li><li class="is-active"><a class="tocitem" href>The transcendental scattering bridge</a><ul class="internal"><li><a class="tocitem" href="#Exact-transcendental-Fabry-Perot-response"><span>Exact transcendental Fabry-Perot response</span></a></li><li><a class="tocitem" href="#A-matrix-keystone:-two-photon-block-scalar-sidebands"><span>A-matrix keystone: two-photon block ↔ scalar sidebands</span></a></li><li><a class="tocitem" href="#Rep-convergence-across-the-bridge"><span>Rep convergence across the bridge</span></a></li><li><a class="tocitem" href="#Etalon-cross-check-through-the-extension"><span>Etalon cross-check through the extension</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>The transcendental scattering bridge</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>The transcendental scattering bridge</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl/blob/main/test/test_scattering.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="The-transcendental-scattering-bridge"><a class="docs-heading-anchor" href="#The-transcendental-scattering-bridge">The transcendental scattering bridge</a><a id="The-transcendental-scattering-bridge-1"></a><a class="docs-heading-anchor-permalink" href="#The-transcendental-scattering-bridge" title="Permalink"></a></h1><p><code>to_scattering</code> lowers the composed model to the canonical scattering form with every <code>FreeSpace</code> an <em>exact</em> delay (PLAN<em>rationalize</em>late §5, validation 5). Three layers of validation:</p><ol><li>the exact scalar transfer function reproduces the analytic Fabry-Perot response, transcendentally in <span>$\Omega$</span> (FSR physics included);</li><li>the <strong>A-matrix keystone test</strong>: OMTK&#39;s linearized two-photon (quadrature) response equals <span>$A\cdot\mathrm{diag}(g(i\Omega), \overline{g(-i\Omega)})\cdot A^{-1}$</span> blockwise per port pair, on an undetuned and a detuned cavity, where <span>$g$</span> is the scalar network evaluated with the <em>matching</em> delay representation (the identity is exact for any real-rational representation) — this cross-validates OMTK&#39;s realification, its linearization path, and <code>to_scattering</code> against each other;</li><li><strong>rep convergence across the bridge</strong>: a high-order <code>PadeDelay</code> model tracks the exact-delay scattering response within the known phase-error bound.</li></ol><p>When <a href="https://github.com">Etalon</a> is available (e.g. dev&#39;d into the environment), the same matrices drive Etalon&#39;s <code>ScatteringSystem</code> solver via the package extension, closing the cross-tool validation web.</p><pre><code class="language-julia hljs">using Test
+using OpticalModelingToolkit
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t
+using ControlSystemsBase: ss, freqresp
+using LinearAlgebra
+
+const λ_sc = 1064.0e-9
+const c_sc = 299792458.0</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.99792458e8</code></pre><p>Transfer matrix <span>$G(s) = M_3 (E(-s) - M_1)^{-1} M_2 + M_4$</span> of a <code>to_scattering</code> result. <code>delayfun(s, τ)</code> evaluates one edge&#39;s propagation dynamics: <code>exp(-s*τ)</code> is the exact transcendental form (what Etalon&#39;s <code>ScatteringSystem</code> evaluates); an all-pass rational stands in for a <code>PadeDelay</code> time-domain representation.</p><pre><code class="language-julia hljs">function scattering_tf(parts, s; delayfun = (s, τ) -&gt; exp(-s * τ))
+    Einv = Diagonal([1 / delayfun(s, τ) for τ in parts.delays])
+    return parts.M3 * ((Einv - parts.M1) \ parts.M2) + parts.M4
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">scattering_tf (generic function with 1 method)</code></pre><p>The order-<code>n</code> all-pass cascade realized by <code>PadeDelay(n)</code>:</p><pre><code class="language-julia hljs">ap_delay(n) = (s, τ) -&gt; ((1 - s * τ / 2n) / (1 + s * τ / 2n))^n</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ap_delay (generic function with 1 method)</code></pre><p>Fabry-Perot with a modulated laser; <code>L</code> sets the (de)tuning.</p><pre><code class="language-julia hljs">function fp_model(L_v, rep = Algebraic())
+    @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
+    @named m1 = Mirror(R = 0.99)
+    @named space = FreeSpace(L = L_v, λ = λ_sc, rep = rep)
+    @named m2 = Mirror(R = 0.999)
+    @named vac = Vacuum()
+    eqs = [
+        link(laser.p1, m1.p1)
+        link(m1.p2, space.p1)
+        link(space.p2, m2.p1)
+        link(m2.p2, vac.p1)
+    ]
+    @named fp = System(eqs, t; systems = [laser, m1, space, m2, vac])
+    return fp, laser, m1, m2
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">fp_model (generic function with 2 methods)</code></pre><p>Resonant macroscopic length ≈ 0.1 m: <span>$e^{2ikL} = -1$</span>.</p><pre><code class="language-julia hljs">const L_res_sc = (2 * round(Int, 0.1 / (λ_sc / 4)) + 1) * λ_sc / 4</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.20000034600000002</code></pre><h2 id="Exact-transcendental-Fabry-Perot-response"><a class="docs-heading-anchor" href="#Exact-transcendental-Fabry-Perot-response">Exact transcendental Fabry-Perot response</a><a id="Exact-transcendental-Fabry-Perot-response-1"></a><a class="docs-heading-anchor-permalink" href="#Exact-transcendental-Fabry-Perot-response" title="Permalink"></a></h2><p><code>to_scattering</code> must expose six directed edges and preserve the FreeSpace delay <span>$\tau = L/c$</span> exactly on the two intracavity edges. The resulting scalar transfer function reproduces the analytic transmission and reflection, swept transcendentally across two FSRs with no rationalization anywhere.</p><pre><code class="language-julia hljs">@testset &quot;to_scattering: exact transcendental Fabry-Perot response&quot; begin
+    fp, laser, m1, m2 = fp_model(L_res_sc)
+    parts = to_scattering(fp)
+
+    # 6 directed edges: laser↔m1 (2), m1↔m2 through the spaces (2), m2↔vac (2)
+    @test length(parts.delays) == 6
+    @test length(parts.x) == 6
+    @test sort(parts.u) == sort(parts.y)
+    # the FreeSpace delay τ = L/c survives exactly on the two intracavity edges
+    τ_v = L_res_sc / c_sc
+    @test count(≈(τ_v), parts.delays) == 2
+    @test count(==(0.0), parts.delays) == 4
+
+    iu = findfirst(==(:laser), parts.u)
+    iy_t = findfirst(==(:vac), parts.y)     # transmission arrives at the vacuum
+    iy_r = findfirst(==(:laser), parts.y)   # reflection arrives back at the laser
+
+    r1, r2 = sqrt(0.99), sqrt(0.999)
+    t1, t2 = sqrt(1 - 0.99), sqrt(1 - 0.999)
+    φ = 2π * L_res_sc / λ_sc
+
+    # Transcendental sweep across two FSRs. Tolerance: near resonance the
+    # closed-loop denominator amplifies the large-angle trig roundoff of
+    # φ ≈ 6e5 rad by the finesse (~2e2), so ~1e-8 relative is the float-level
+    # agreement, not a physics error.
+    for f in 10.0 .^ range(2, log10(2.2 * c_sc / (2 * L_res_sc)); length = 40)
+        Ω = 2π * f
+        P = cis(φ - Ω * τ_v)
+        G = scattering_tf(parts, im * Ω)
+        @test G[iy_t, iu] ≈ t1 * t2 * P / (1 + r1 * r2 * P^2) rtol = 1.0e-6
+        @test G[iy_r, iu] ≈ r1 + t1^2 * r2 * P^2 / (1 + r1 * r2 * P^2) rtol = 1.0e-6
+    end
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;to_scattering: exact transcendental Fabry-Perot response&quot;, false, true, false, &quot;test_scattering.md&quot;, 1.792221337915629e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 85, 1.792221338047248e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="A-matrix-keystone:-two-photon-block-scalar-sidebands"><a class="docs-heading-anchor" href="#A-matrix-keystone:-two-photon-block-scalar-sidebands">A-matrix keystone: two-photon block ↔ scalar sidebands</a><a id="A-matrix-keystone:-two-photon-block-scalar-sidebands-1"></a><a class="docs-heading-anchor-permalink" href="#A-matrix-keystone:-two-photon-block-scalar-sidebands" title="Permalink"></a></h2><p>The realification <span>$(\mathrm{re}, \mathrm{im}) = T (a, \bar a)$</span>, <span>$T = \tfrac12 \begin{bmatrix} 1 &amp; 1 \\ -i &amp; i \end{bmatrix}$</span>, ties OMTK&#39;s linearized quadrature blocks to the rep-matched scalar network. Because the representation is a real-rational (conj-symmetric) function of <span>$s$</span>, the blockwise identity holds exactly at every frequency — checked here on both an undetuned and a detuned cavity, in both the <code>Algebraic</code> and <code>PadeDelay(2)</code> representations.</p><pre><code class="language-julia hljs">@testset &quot;A-matrix keystone: two-photon block ↔ scalar sidebands&quot; begin
+    T = [1 1; -im im] / 2
+
+    for (label, L_v) in ((&quot;undetuned&quot;, L_res_sc), (&quot;detuned&quot;, L_res_sc + λ_sc / 17)),
+            (rep, delayfun) in ((Algebraic(), (s, τ) -&gt; 1.0), (PadeDelay(2), ap_delay(2)))
+
+        fp, laser, m1, m2 = fp_model(L_v, rep)
+        parts = to_scattering(fp)
+        iu = findfirst(==(:laser), parts.u)
+
+        # OMTK linearized quadrature blocks vs the rep-matched scalar network:
+        # exact blockwise identity at every frequency, since the rep is a
+        # real-rational function of s (conj-symmetric)
+        Ωs = 2π .* (10.0 .^ range(3, 9.3; length = 9))
+        for (out, ychan) in ((m2.p2.o, :vac), (m1.p1.o, :laser))
+            mats, _ = linearize_proper(fp, [laser.δA, laser.δQ], [out.a[1], out.a[2]])
+            resp = freqresp(ss(mats...), Ωs)
+            iy = findfirst(==(ychan), parts.y)
+            for (k, Ω) in enumerate(Ωs)
+                g₊ = scattering_tf(parts, im * Ω; delayfun)[iy, iu]
+                g₋ = conj(scattering_tf(parts, -im * Ω; delayfun)[iy, iu])
+                pred = T * Diagonal([g₊, g₋]) / T
+                @test resp[:, :, k] ≈ pred rtol = 1.0e-6 atol = 1.0e-12
+            end
+        end
+    end
+    println(&quot;✓ A-matrix keystone holds, undetuned and detuned, both reps&quot;)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;A-matrix keystone: two-photon block ↔ scalar sidebands&quot;, false, true, false, &quot;test_scattering.md&quot;, 1.792221338057849e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 72, 1.792221339727519e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="Rep-convergence-across-the-bridge"><a class="docs-heading-anchor" href="#Rep-convergence-across-the-bridge">Rep convergence across the bridge</a><a id="Rep-convergence-across-the-bridge-1"></a><a class="docs-heading-anchor-permalink" href="#Rep-convergence-across-the-bridge" title="Permalink"></a></h2><p>A <code>PadeDelay(16)</code> time-domain model tracks the exact-delay scattering response within the <span>$(\omega\tau)^3/12n^2$</span> phase-error bound out to half an FSR.</p><pre><code class="language-julia hljs">@testset &quot;rep convergence across the bridge&quot; begin
+    fp, laser, m1, m2 = fp_model(L_res_sc, PadeDelay(16))
+    parts = to_scattering(fp)
+    iu = findfirst(==(:laser), parts.u)
+    iy = findfirst(==(:vac), parts.y)
+
+    Ωs = 2π .* (10.0 .^ range(5, log10(0.5 * c_sc / (2 * L_res_sc)); length = 12))
+    mats, _ = linearize_proper(fp, [laser.δA, laser.δQ], [m2.p2.o.a[1], m2.p2.o.a[2]])
+    resp = freqresp(ss(mats...), Ωs)
+    for (k, Ω) in enumerate(Ωs)
+        h_omtk = resp[1, 1, k] + im * resp[2, 1, k]
+        h_exact = scattering_tf(parts, im * Ω)[iy, iu]
+        @test h_omtk ≈ h_exact rtol = 2.0e-3
+    end
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;rep convergence across the bridge&quot;, false, true, false, &quot;test_scattering.md&quot;, 1.792221339904688e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 12, 1.792221340005832e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="Etalon-cross-check-through-the-extension"><a class="docs-heading-anchor" href="#Etalon-cross-check-through-the-extension">Etalon cross-check through the extension</a><a id="Etalon-cross-check-through-the-extension-1"></a><a class="docs-heading-anchor-permalink" href="#Etalon-cross-check-through-the-extension" title="Permalink"></a></h2><p>The cross-tool leg: when Etalon is loadable, its <code>ScatteringSystem</code> must evaluate the identical transcendental response through the package extension.</p><pre><code class="language-julia hljs">if Base.find_package(&quot;Etalon&quot;) !== nothing
+    using Etalon: Etalon
+    @testset &quot;Etalon cross-check through the extension&quot; begin
+        fp, laser, m1, m2 = fp_model(L_res_sc)
+        parts = to_scattering(fp)
+        sys = Etalon.ScatteringSystem(fp)
+        @test sys isa Etalon.ScatteringSystem
+        for f in (1.0e3, 1.0e6, 1.0e9, 2.3e9)
+            s = im * 2π * f
+            @test sys(s) ≈ scattering_tf(parts, s) rtol = 1.0e-12
+        end
+        println(&quot;✓ Etalon ScatteringSystem matches to_scattering exactly&quot;)
+    end
+else
+    @info &quot;Etalon not in the test environment — cross-tool leg skipped &quot; *
+        &quot;(dev ~/dev/Etalon into the env to enable it)&quot;
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr36"><span class="sgr1">[ Info: </span></span>Etalon not in the test environment — cross-tool leg skipped (dev ~/dev/Etalon into the env to enable it)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_propagation/">« Propagation representations</a><a class="docs-footer-nextpage" href="../../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 07:15">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

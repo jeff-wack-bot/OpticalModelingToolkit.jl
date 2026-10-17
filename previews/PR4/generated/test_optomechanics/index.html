@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Optomechanics: optical spring and lock acquisition · OpticalModelingToolkit.jl</title><meta name="title" content="Optomechanics: optical spring and lock acquisition · OpticalModelingToolkit.jl"/><meta property="og:title" content="Optomechanics: optical spring and lock acquisition · OpticalModelingToolkit.jl"/><meta property="twitter:title" content="Optomechanics: optical spring and lock acquisition · OpticalModelingToolkit.jl"/><meta name="description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="twitter:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_optomechanics/"/><meta property="twitter:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_optomechanics/"/><link rel="canonical" href="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_optomechanics/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OpticalModelingToolkit.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../design/">Design</a></li><li><a class="tocitem" href="../../solvers/">Solver strategy</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../test_fabry_perot_ac/">Fabry-Perot AC transfer function</a></li><li><a class="tocitem" href="../test_fabry_perot_dc/">Fabry-Perot DC operating point</a></li><li><a class="tocitem" href="../test_michelson/">Michelson interferometer</a></li><li class="is-active"><a class="tocitem" href>Optomechanics: optical spring and lock acquisition</a><ul class="internal"><li><a class="tocitem" href="#The-optical-spring"><span>The optical spring</span></a></li><li><a class="tocitem" href="#Lock-acquisition-in-the-time-domain"><span>Lock acquisition in the time domain</span></a></li></ul></li><li><a class="tocitem" href="../test_propagation/">Propagation representations</a></li><li><a class="tocitem" href="../test_scattering/">The transcendental scattering bridge</a></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Optomechanics: optical spring and lock acquisition</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Optomechanics: optical spring and lock acquisition</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl/blob/main/test/test_optomechanics.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Optomechanics:-optical-spring-and-lock-acquisition"><a class="docs-heading-anchor" href="#Optomechanics:-optical-spring-and-lock-acquisition">Optomechanics: optical spring and lock acquisition</a><a id="Optomechanics:-optical-spring-and-lock-acquisition-1"></a><a class="docs-heading-anchor-permalink" href="#Optomechanics:-optical-spring-and-lock-acquisition" title="Permalink"></a></h1><p>A Fabry-Perot cavity whose end mirror hangs on a suspension, so optics, mechanics and control share one MTK model. The suspension is written directly as equations: a mass <code>M</code> on a spring of resonance <code>fm</code> and quality factor <code>Q</code>, pushed by the mirror&#39;s radiation pressure force <code>F</code> and an external force <code>Fext</code>.</p><pre><code class="nohighlight hljs">    Laser ── m1 ══ space ══ m2 ── pd
+                             ⟂
+                        suspension (M, fm, Q)</code></pre><pre><code class="language-julia hljs">using Test
+using OpticalModelingToolkit
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
+using ControlSystemsBase: ss, poles
+using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqNonlinearSolve
+using SciMLBase
+
+const λ_om = 1064.0e-9
+const c_om = 299792458.0
+const R1_om, R2_om = 0.99, 0.999
+const M_om, fm_om, Q_om = 0.1, 20.0, 2.0
+const k_om = M_om * (2π * fm_om)^2</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1579.1367041742974</code></pre><p>The radiation pressure force on the end mirror as a function of its position <code>x</code> (zero at an anti-resonance, <code>λ/4</code> on resonance), for input power <code>Pin</code>:</p><pre><code class="language-julia hljs">function F_analytic(x, Pin)
+    r1, r2, t1 = sqrt(R1_om), sqrt(R2_om), sqrt(1 - R1_om)
+    return 2R2_om / c_om * Pin * abs2(t1 / (1 + r1 * r2 * cis(2 * (2π / λ_om) * (λ_om / 2 + x))))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">F_analytic (generic function with 1 method)</code></pre><p>The model. <code>controller</code> adds equations closing a loop around the plant; with none, <code>Fext</code> is a free input.</p><pre><code class="language-julia hljs">function suspended_cavity(; Pin, x_rest, controller = nothing)
+    @named laser = Laser(A = sqrt(Pin))
+    @named m1 = Mirror(R = R1_om)
+    @named space = FreeSpace(L = λ_om / 2, λ = λ_om)
+    @named m2 = MovableMirror(R = R2_om, λ = λ_om)
+    @named pd = Photodetector()
+    @variables x(t) = x_rest v(t) = 0.0 Fext(t) [input = true]
+    ωm = 2π * fm_om
+    eqs = [
+        link(laser.p1, m1.p1)
+        link(m1.p2, space.p1)
+        link(space.p2, m2.p1)
+        link(m2.p2, pd.p1)
+        m2.x ~ x
+        D(x) ~ v
+        M_om * D(v) ~ -k_om * (x - x_rest) - (M_om * ωm / Q_om) * v + m2.F + Fext
+    ]
+    controller === nothing || append!(eqs, controller(pd, Fext))
+    @named plant = System(eqs, t; systems = [laser, m1, space, m2, pd])
+    return plant, (; x, v, Fext, m2, pd)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">suspended_cavity (generic function with 1 method)</code></pre><h2 id="The-optical-spring"><a class="docs-heading-anchor" href="#The-optical-spring">The optical spring</a><a id="The-optical-spring-1"></a><a class="docs-heading-anchor-permalink" href="#The-optical-spring" title="Permalink"></a></h2><p>Detuned from resonance, the force depends on position, so radiation pressure acts as a spring of stiffness <span>$K = -\partial F/\partial x$</span> in parallel with the suspension. The linearized opto-mechanical model, from the external force to the position, must have exactly the poles of</p><p class="math-container">\[M s^2 + \frac{M\omega_m}{Q} s + (k + K).\]</p><p>The equilibrium position balances the suspension and the light, <span>$k(x^* - x_\mathrm{rest}) = F(x^*)$</span>. Beyond the resonance (<span>$x^* &gt; \lambda/4$</span>) the light stiffens the suspension. Short of it the optical spring is negative and much stronger than the suspension, so the mirror is unstable.</p><pre><code class="language-julia hljs">@testset &quot;optical spring shifts the suspension resonance&quot; begin
+    Pin = 50.0
+    for x_star in (λ_om / 4 + 0.3e-9, λ_om / 4 - 0.3e-9)
+        x_rest = x_star - F_analytic(x_star, Pin) / k_om
+        plant, c = suspended_cavity(; Pin, x_rest)
+        mats, _ = linearize_proper(plant, [c.Fext], [c.x]; op = Dict(c.x =&gt; x_star, c.v =&gt; 0.0))
+        h = 1.0e-14
+        K = -(F_analytic(x_star + h, Pin) - F_analytic(x_star - h, Pin)) / 2h
+        # analytic poles of M s² + (Mωm/Q) s + (k + K)
+        a, b, cc = M_om, M_om * 2π * fm_om / Q_om, k_om + K
+        disc = sqrt(complex(b^2 - 4a * cc))
+        expected = [(-b + disc) / 2a, (-b - disc) / 2a]
+        p = poles(ss(mats...))
+        @test sort(p; by = z -&gt; (imag(z), real(z))) ≈
+            sort(expected; by = z -&gt; (imag(z), real(z))) rtol = 1.0e-6
+        if x_star &gt; λ_om / 4
+            # stiffened: the 20 Hz resonance moves up by more than 2×
+            @test sqrt(cc / M_om) / 2π &gt; 2fm_om
+        else
+            # anti-spring: unstable
+            @test maximum(real, p) &gt; 0
+        end
+    end
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;optical spring shifts the suspension resonance&quot;, false, true, false, &quot;test_optomechanics.md&quot;, 1.792221308044975e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 4, 1.792221312864328e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="Lock-acquisition-in-the-time-domain"><a class="docs-heading-anchor" href="#Lock-acquisition-in-the-time-domain">Lock acquisition in the time domain</a><a id="Lock-acquisition-in-the-time-domain-1"></a><a class="docs-heading-anchor-permalink" href="#Lock-acquisition-in-the-time-domain" title="Permalink"></a></h2><p>Now close a loop: an integrating servo pushes the mirror with <span>$F_\mathrm{ext} = g_I\int (P_\mathrm{set} - P)\,dt$</span> to hold the transmitted power at half its peak. The mirror starts at rest half a linewidth away from the lock point, on the low-power side; the servo pulls it in and holds it there. The model is a mass-matrix DAE (the field network stays algebraic), so it needs a Rosenbrock solver.</p><pre><code class="language-julia hljs">@testset &quot;lock acquisition&quot; begin
+    Pin = 1.0
+    r1r2 = sqrt(R1_om * R2_om)
+    P_peak = (1 - R1_om) * (1 - R2_om) / (1 - r1r2)^2 * Pin
+    P_set = P_peak / 2
+    # half-power point on the far side of the resonance, where dP/dx &lt; 0
+    P_t(x) = Pin * (1 - R1_om) * (1 - R2_om) /
+        abs2(1 + r1r2 * cis(2 * (2π / λ_om) * (λ_om / 2 + x)))
+    lo, hi = λ_om / 4, 3λ_om / 8
+    for _ in 1:100
+        mid = (lo + hi) / 2
+        P_t(mid) &gt; P_set ? (lo = mid) : (hi = mid)
+    end
+    x_lock = lo
+    slope = (P_t(x_lock + 1.0e-13) - P_t(x_lock - 1.0e-13)) / 2.0e-13
+    gI = 2π * 5.0 * k_om / abs(slope)            # ~5 Hz unity-gain frequency
+
+    function servo(pd, Fext)
+        @variables u(t) = 0.0
+        return [D(u) ~ -gI * (P_set - pd.P), Fext ~ u]
+    end
+    linewidth = λ_om / (4π) * (1 - r1r2) / sqrt(r1r2)
+    plant, c = suspended_cavity(; Pin, x_rest = x_lock + 0.5 * linewidth, controller = servo)
+    sys = mtkcompile(plant)
+    prob = ODEProblem(sys, [], (0.0, 3.0))
+    sol = solve(prob, Rodas5P(); reltol = 1.0e-8, abstol = 1.0e-12)
+    @test SciMLBase.successful_retcode(sol)
+    # starts well below the setpoint ...
+    @test sol[c.pd.P][1] &lt; 0.9P_set
+    # ... and ends locked on it
+    @test sol(3.0; idxs = c.pd.P) ≈ P_set rtol = 1.0e-3
+    @test sol(3.0; idxs = c.x) ≈ x_lock rtol = 1.0e-6
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;lock acquisition&quot;, false, true, false, &quot;test_optomechanics.md&quot;, 1.792221312877693e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 4, 1.792221316389717e9, 0x01, ReentrantLock(), Any[])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_michelson/">« Michelson interferometer</a><a class="docs-footer-nextpage" href="../test_propagation/">Propagation representations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 07:15">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
