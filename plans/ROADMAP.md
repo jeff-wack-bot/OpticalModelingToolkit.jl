@@ -16,6 +16,8 @@ history; `docs/src/design.md` records the decisions that came out of them.
 - Radiation pressure: optical springs from linearization, and time-domain
   lock acquisition with an MTK servo.
 - Subassemblies (`expose`), flattened by `to_scattering`.
+- Macroscopic lengths (pure delays) and microscopic tunings `ϕ`, as in
+  Breadboard and Finesse.
 
 ## Open
 
@@ -24,8 +26,6 @@ history; `docs/src/design.md` records the decisions that came out of them.
   acausal `ModelingToolkitStandardLibrary.Mechanical.TranslationalPosition`
   flange, which plugs into standard-library masses and springs at the cost of
   a heavy dependency. Undecided.
-- **`to_scattering` at the model's parameter values.** It currently uses
-  constructor values, so `remake`d parameters are invisible to it.
 - **Upstream MTK issues** found here, worth filing:
   1. `linearize` could eliminate an invertible index-1 algebraic block itself
      (what `linearize_proper` does).
@@ -46,5 +46,7 @@ history; `docs/src/design.md` records the decisions that came out of them.
   (upstream issue 3): exact delays break every algebraic loop, and the result
   is a delay-algebraic recursion outside DelayDiffEq's DDE class.
 - **A sparse/KLU numerical core.** These networks are small and dense.
+- **`to_scattering` reading `remake`d parameter values.** It uses constructor
+  values, and since it compiles nothing, rebuilding the model is cheap.
 - **Higher-order spatial modes, nonlinear optics, quantum noise as a
   primitive.** Outside a real-valued plane-wave DAE.
