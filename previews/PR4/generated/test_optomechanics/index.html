@@ -14,20 +14,20 @@ const λ_om = 1064.0e-9
 const c_om = 299792458.0
 const R1_om, R2_om = 0.99, 0.999
 const M_om, fm_om, Q_om = 0.1, 20.0, 2.0
-const k_om = M_om * (2π * fm_om)^2</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1579.1367041742974</code></pre><p>The radiation pressure force on the end mirror as a function of its position <code>x</code> (zero at an anti-resonance, <code>λ/4</code> on resonance), for input power <code>Pin</code>:</p><pre><code class="language-julia hljs">function F_analytic(x, Pin)
+const k_om = M_om * (2π * fm_om)^2</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1579.1367041742974</code></pre><p>The radiation pressure force on the end mirror as a function of its position <code>x</code> (zero on resonance), for input power <code>Pin</code>:</p><pre><code class="language-julia hljs">function F_analytic(x, Pin)
     r1, r2, t1 = sqrt(R1_om), sqrt(R2_om), sqrt(1 - R1_om)
-    return 2R2_om / c_om * Pin * abs2(t1 / (1 + r1 * r2 * cis(2 * (2π / λ_om) * (λ_om / 2 + x))))
+    return 2R2_om / c_om * Pin * abs2(t1 / (1 - r1 * r2 * cis(2 * (2π / λ_om) * x)))
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">F_analytic (generic function with 1 method)</code></pre><p>The model. <code>controller</code> adds equations closing a loop around the plant; with none, <code>Fext</code> is a free input.</p><pre><code class="language-julia hljs">function suspended_cavity(; Pin, x_rest, controller = nothing)
     @named laser = Laser(A = sqrt(Pin))
     @named m1 = Mirror(R = R1_om)
-    @named space = FreeSpace(L = λ_om / 2, λ = λ_om)
+    @named space = FreeSpace(L = 0.1)
     @named m2 = MovableMirror(R = R2_om, λ = λ_om)
     @named pd = Photodetector()
     @variables x(t) = x_rest v(t) = 0.0 Fext(t) [input = true]
     ωm = 2π * fm_om
     eqs = [
-        link(laser.p1, m1.p1)
-        link(m1.p2, space.p1)
+        link(laser.p1, m1.p2)
+        link(m1.p1, space.p1)
         link(space.p2, m2.p1)
         link(m2.p2, pd.p1)
         m2.x ~ x
@@ -37,9 +37,9 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
     controller === nothing || append!(eqs, controller(pd, Fext))
     @named plant = System(eqs, t; systems = [laser, m1, space, m2, pd])
     return plant, (; x, v, Fext, m2, pd)
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">suspended_cavity (generic function with 1 method)</code></pre><h2 id="The-optical-spring"><a class="docs-heading-anchor" href="#The-optical-spring">The optical spring</a><a id="The-optical-spring-1"></a><a class="docs-heading-anchor-permalink" href="#The-optical-spring" title="Permalink"></a></h2><p>Detuned from resonance, the force depends on position, so radiation pressure acts as a spring of stiffness <span>$K = -\partial F/\partial x$</span> in parallel with the suspension. The linearized opto-mechanical model, from the external force to the position, must have exactly the poles of</p><p class="math-container">\[M s^2 + \frac{M\omega_m}{Q} s + (k + K).\]</p><p>The equilibrium position balances the suspension and the light, <span>$k(x^* - x_\mathrm{rest}) = F(x^*)$</span>. Beyond the resonance (<span>$x^* &gt; \lambda/4$</span>) the light stiffens the suspension. Short of it the optical spring is negative and much stronger than the suspension, so the mirror is unstable.</p><pre><code class="language-julia hljs">@testset &quot;optical spring shifts the suspension resonance&quot; begin
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">suspended_cavity (generic function with 1 method)</code></pre><h2 id="The-optical-spring"><a class="docs-heading-anchor" href="#The-optical-spring">The optical spring</a><a id="The-optical-spring-1"></a><a class="docs-heading-anchor-permalink" href="#The-optical-spring" title="Permalink"></a></h2><p>Detuned from resonance, the force depends on position, so radiation pressure acts as a spring of stiffness <span>$K = -\partial F/\partial x$</span> in parallel with the suspension. The linearized opto-mechanical model, from the external force to the position, must have exactly the poles of</p><p class="math-container">\[M s^2 + \frac{M\omega_m}{Q} s + (k + K).\]</p><p>The equilibrium position balances the suspension and the light, <span>$k(x^* - x_\mathrm{rest}) = F(x^*)$</span>. Beyond the resonance (<span>$x^* &gt; 0$</span>) the light stiffens the suspension. Short of it the optical spring is negative and much stronger than the suspension, so the mirror is unstable.</p><pre><code class="language-julia hljs">@testset &quot;optical spring shifts the suspension resonance&quot; begin
     Pin = 50.0
-    for x_star in (λ_om / 4 + 0.3e-9, λ_om / 4 - 0.3e-9)
+    for x_star in (0.3e-9, -0.3e-9)
         x_rest = x_star - F_analytic(x_star, Pin) / k_om
         plant, c = suspended_cavity(; Pin, x_rest)
         mats, _ = linearize_proper(plant, [c.Fext], [c.x]; op = Dict(c.x =&gt; x_star, c.v =&gt; 0.0))
@@ -52,7 +52,7 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
         p = poles(ss(mats...))
         @test sort(p; by = z -&gt; (imag(z), real(z))) ≈
             sort(expected; by = z -&gt; (imag(z), real(z))) rtol = 1.0e-6
-        if x_star &gt; λ_om / 4
+        if x_star &gt; 0
             # stiffened: the 20 Hz resonance moves up by more than 2×
             @test sqrt(cc / M_om) / 2π &gt; 2fm_om
         else
@@ -60,15 +60,15 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
             @test maximum(real, p) &gt; 0
         end
     end
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;optical spring shifts the suspension resonance&quot;, false, true, false, &quot;test_optomechanics.md&quot;, 1.792221308044975e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 4, 1.792221312864328e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="Lock-acquisition-in-the-time-domain"><a class="docs-heading-anchor" href="#Lock-acquisition-in-the-time-domain">Lock acquisition in the time domain</a><a id="Lock-acquisition-in-the-time-domain-1"></a><a class="docs-heading-anchor-permalink" href="#Lock-acquisition-in-the-time-domain" title="Permalink"></a></h2><p>Now close a loop: an integrating servo pushes the mirror with <span>$F_\mathrm{ext} = g_I\int (P_\mathrm{set} - P)\,dt$</span> to hold the transmitted power at half its peak. The mirror starts at rest half a linewidth away from the lock point, on the low-power side; the servo pulls it in and holds it there. The model is a mass-matrix DAE (the field network stays algebraic), so it needs a Rosenbrock solver.</p><pre><code class="language-julia hljs">@testset &quot;lock acquisition&quot; begin
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;optical spring shifts the suspension resonance&quot;, false, true, false, &quot;test_optomechanics.md&quot;, 1.792224253726083e9, Random.Xoshiro(0x1ce3acbe98e93aa4, 0x8b9773634fa15b09, 0x7d5864313a7d2e05, 0xb8dfa8b486255c95, 0x408198ce5744b9eb), 4, 1.79222426197208e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="Lock-acquisition-in-the-time-domain"><a class="docs-heading-anchor" href="#Lock-acquisition-in-the-time-domain">Lock acquisition in the time domain</a><a id="Lock-acquisition-in-the-time-domain-1"></a><a class="docs-heading-anchor-permalink" href="#Lock-acquisition-in-the-time-domain" title="Permalink"></a></h2><p>Now close a loop: an integrating servo pushes the mirror with <span>$F_\mathrm{ext} = g_I\int (P_\mathrm{set} - P)\,dt$</span> to hold the transmitted power at half its peak. The mirror starts at rest half a linewidth away from the lock point, on the low-power side; the servo pulls it in and holds it there. The model is a mass-matrix DAE (the field network stays algebraic), so it needs a Rosenbrock solver.</p><pre><code class="language-julia hljs">@testset &quot;lock acquisition&quot; begin
     Pin = 1.0
     r1r2 = sqrt(R1_om * R2_om)
     P_peak = (1 - R1_om) * (1 - R2_om) / (1 - r1r2)^2 * Pin
     P_set = P_peak / 2
     # half-power point on the far side of the resonance, where dP/dx &lt; 0
     P_t(x) = Pin * (1 - R1_om) * (1 - R2_om) /
-        abs2(1 + r1r2 * cis(2 * (2π / λ_om) * (λ_om / 2 + x)))
-    lo, hi = λ_om / 4, 3λ_om / 8
+        abs2(1 - r1r2 * cis(2 * (2π / λ_om) * x))
+    lo, hi = 0.0, λ_om / 8
     for _ in 1:100
         mid = (lo + hi) / 2
         P_t(mid) &gt; P_set ? (lo = mid) : (hi = mid)
@@ -92,4 +92,4 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
     # ... and ends locked on it
     @test sol(3.0; idxs = c.pd.P) ≈ P_set rtol = 1.0e-3
     @test sol(3.0; idxs = c.x) ≈ x_lock rtol = 1.0e-6
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;lock acquisition&quot;, false, true, false, &quot;test_optomechanics.md&quot;, 1.792221312877693e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 4, 1.792221316389717e9, 0x01, ReentrantLock(), Any[])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_michelson/">« Michelson interferometer</a><a class="docs-footer-nextpage" href="../test_propagation/">Propagation representations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 07:15">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;lock acquisition&quot;, false, true, false, &quot;test_optomechanics.md&quot;, 1.792224261986737e9, Random.Xoshiro(0x1ce3acbe98e93aa4, 0x8b9773634fa15b09, 0x7d5864313a7d2e05, 0xb8dfa8b486255c95, 0x408198ce5744b9eb), 4, 1.792224266646616e9, 0x01, ReentrantLock(), Any[])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_michelson/">« Michelson interferometer</a><a class="docs-footer-nextpage" href="../test_propagation/">Propagation representations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 08:05">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

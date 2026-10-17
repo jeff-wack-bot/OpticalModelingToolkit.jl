@@ -5,24 +5,23 @@
     Laser ── p1 [bs] p3 ══ Lx ══ ex
                  p4
                  │
-                 pd</code></pre><p>Light entering <code>p1</code> reflects out of <code>p2</code> (the y arm) and transmits out of <code>p3</code> (the x arm). Back at the beamsplitter, the y return transmits to <code>p4</code> and the x return reflects there with <span>$-r$</span>, so the antisymmetric field is</p><p class="math-container">\[E_\mathrm{AS} = r t A \left(e^{2ikL_y} - e^{2ikL_x}\right),
-\qquad P_\mathrm{AS} = 4 R T A^2 \sin^2 k(L_y - L_x).\]</p><pre><code class="language-julia hljs">using Test
+                 pd</code></pre><p>Light entering <code>p1</code> reflects out of <code>p2</code> (the y arm) and transmits out of <code>p3</code> (the x arm). Back at the beamsplitter, the y return transmits to <code>p4</code> and the x return reflects there with <span>$-r$</span>. With end-mirror tunings <span>$\phi_{x,y}$</span> the antisymmetric field is</p><p class="math-container">\[E_\mathrm{AS} = r t A \left(e^{2i\phi_y} - e^{2i\phi_x}\right),
+\qquad P_\mathrm{AS} = 4 R T A^2 \sin^2(\phi_y - \phi_x).\]</p><pre><code class="language-julia hljs">using Test
 using OpticalModelingToolkit
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t
 using NonlinearSolve
 using LinearAlgebra
 
-const λ_mi = 1064.0e-9
 const c_mi = 299792458.0
 
-function michelson(; Lx, Ly, R = 0.5, laser = LaserModulated)
+function michelson(; Lx, Ly, ϕx = 0.0, ϕy = 0.0, R = 0.5, laser = LaserModulated)
     @named src = laser()
     @named bs = Beamsplitter(; R)
-    @named sx = FreeSpace(L = Lx, λ = λ_mi)
-    @named sy = FreeSpace(L = Ly, λ = λ_mi)
-    @named ex = Mirror(R = 1.0)
-    @named ey = Mirror(R = 1.0)
+    @named sx = FreeSpace(L = Lx)
+    @named sy = FreeSpace(L = Ly)
+    @named ex = Mirror(R = 1.0, ϕ = ϕx)
+    @named ey = Mirror(R = 1.0, ϕ = ϕy)
     @named vx = Vacuum()
     @named vy = Vacuum()
     @named pd = Photodetector()
@@ -38,31 +37,26 @@ function michelson(; Lx, Ly, R = 0.5, laser = LaserModulated)
     ]
     @named mich = System(eqs, t; systems = [src, bs, sx, sy, ex, ey, vx, vy, pd])
     return mich, (; src, bs, pd)
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">michelson (generic function with 1 method)</code></pre><h2 id="The-DC-fringe"><a class="docs-heading-anchor" href="#The-DC-fringe">The DC fringe</a><a id="The-DC-fringe-1"></a><a class="docs-heading-anchor-permalink" href="#The-DC-fringe" title="Permalink"></a></h2><p>Stepping the arm-length difference through half a wavelength sweeps the antisymmetric port from dark to bright and back; the symmetric port (back toward the laser) carries the rest of the power.</p><pre><code class="language-julia hljs">@testset &quot;Michelson DC fringe and energy conservation&quot; begin
-    Lx = 1.0
-    for R in (0.5, 0.3), ΔL in range(0, λ_mi / 2; length = 7)
-        mich, c = michelson(; Lx, Ly = Lx + ΔL, R, laser = Laser)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">michelson (generic function with 1 method)</code></pre><h2 id="The-DC-fringe"><a class="docs-heading-anchor" href="#The-DC-fringe">The DC fringe</a><a id="The-DC-fringe-1"></a><a class="docs-heading-anchor-permalink" href="#The-DC-fringe" title="Permalink"></a></h2><p>Stepping the differential tuning through <span>$\pi/2$</span> (a quarter wavelength of end-mirror motion) sweeps the antisymmetric port from dark to bright; the symmetric port (back toward the laser) carries the rest of the power.</p><pre><code class="language-julia hljs">@testset &quot;Michelson DC fringe and energy conservation&quot; begin
+    for R in (0.5, 0.3), ϕy in range(0, π / 2; length = 7)
+        mich, c = michelson(; Lx = 1.0, Ly = 1.3, ϕy, R, laser = Laser)
         sys = mtkcompile(mich)
         sol = solve(NonlinearProblem(sys, Dict(u =&gt; 0.0 for u in unknowns(sys))))
-        k = 2π / λ_mi
-        P_as = abs2(sqrt(R * (1 - R)) * (cis(2k * (Lx + ΔL)) - cis(2k * Lx)))
-        # arm phases 2kL ~ 1e7 rad: trig roundoff limits agreement to ~1e-9
-        @test sol[c.pd.P] ≈ P_as atol = 1.0e-8
+        @test sol[c.pd.P] ≈ 4R * (1 - R) * sin(ϕy)^2 atol = 1.0e-14
         P_sym = sol[c.src.p1.i.a[1]]^2 + sol[c.src.p1.i.a[2]]^2
-        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-10
+        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-12
     end
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;Michelson DC fringe and energy conservation&quot;, false, true, false, &quot;test_michelson.md&quot;, 1.792221304332574e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 28, 1.79222130622319e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="The-exact-antisymmetric-port-response"><a class="docs-heading-anchor" href="#The-exact-antisymmetric-port-response">The exact antisymmetric-port response</a><a id="The-exact-antisymmetric-port-response-1"></a><a class="docs-heading-anchor-permalink" href="#The-exact-antisymmetric-port-response" title="Permalink"></a></h2><p><code>to_scattering</code> needs no beamsplitter-specific code: it reads the scattering table each component stamps into its metadata. The exact transfer function from the laser to the detector, with arm delays <span>$\tau_{x,y} = L_{x,y}/c$</span>, is</p><p class="math-container">\[G(i\Omega) = r t \left(e^{2i(kL_y - \Omega\tau_y)} - e^{2i(kL_x - \Omega\tau_x)}\right).\]</p><pre><code class="language-julia hljs">@testset &quot;to_scattering through a beamsplitter&quot; begin
-    Lx, Ly = 1.0, 1.3
-    mich, _ = michelson(; Lx, Ly, R = 0.4)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;Michelson DC fringe and energy conservation&quot;, false, true, false, &quot;test_michelson.md&quot;, 1.792224248411069e9, Random.Xoshiro(0x1ce3acbe98e93aa4, 0x8b9773634fa15b09, 0x7d5864313a7d2e05, 0xb8dfa8b486255c95, 0x408198ce5744b9eb), 28, 1.792224251136791e9, 0x01, ReentrantLock(), Any[])</code></pre><h2 id="The-exact-antisymmetric-port-response"><a class="docs-heading-anchor" href="#The-exact-antisymmetric-port-response">The exact antisymmetric-port response</a><a id="The-exact-antisymmetric-port-response-1"></a><a class="docs-heading-anchor-permalink" href="#The-exact-antisymmetric-port-response" title="Permalink"></a></h2><p><code>to_scattering</code> needs no beamsplitter-specific code: it reads the scattering table each component stamps into its metadata. The exact transfer function from the laser to the detector, with arm delays <span>$\tau_{x,y} = L_{x,y}/c$</span>, is</p><p class="math-container">\[G(i\Omega) = r t \left(e^{2i\phi_y - 2i\Omega\tau_y} - e^{2i\phi_x - 2i\Omega\tau_x}\right).\]</p><pre><code class="language-julia hljs">@testset &quot;to_scattering through a beamsplitter&quot; begin
+    Lx, Ly, ϕx, ϕy = 1.0, 1.3, 0.2, -0.7
+    mich, _ = michelson(; Lx, Ly, ϕx, ϕy, R = 0.4)
     parts = to_scattering(mich)
     iu = findfirst(==(:src), parts.u)
     iy = findfirst(==(:pd), parts.y)
-    k = 2π / λ_mi
     r, τ = sqrt(0.4), sqrt(0.6)
     for f in (0.0, 1.0e3, 1.0e6, 7.7e7, 3.0e8)
         s = im * 2π * f
         G = parts.M3 * ((Diagonal(exp.(s .* parts.delays)) - parts.M1) \ parts.M2) + parts.M4
-        expected = r * τ * (exp(2im * k * Ly - 2s * Ly / c_mi) - exp(2im * k * Lx - 2s * Lx / c_mi))
-        @test G[iy, iu] ≈ expected rtol = 1.0e-9
+        expected = r * τ * (exp(2im * ϕy - 2s * Ly / c_mi) - exp(2im * ϕx - 2s * Lx / c_mi))
+        @test G[iy, iu] ≈ expected rtol = 1.0e-12
     end
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;to_scattering through a beamsplitter&quot;, false, true, false, &quot;test_michelson.md&quot;, 1.792221306326219e9, Random.Xoshiro(0xa91b8cbf8f9aab10, 0x1ee9518297a63bc0, 0xdd63b732bd90ca7c, 0xd77b55245277962d, 0x3d2969434ba66df7), 5, 1.792221307702981e9, 0x01, ReentrantLock(), Any[])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_fabry_perot_dc/">« Fabry-Perot DC operating point</a><a class="docs-footer-nextpage" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 07:15">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test.DefaultTestSet(&quot;to_scattering through a beamsplitter&quot;, false, true, false, &quot;test_michelson.md&quot;, 1.792224251265306e9, Random.Xoshiro(0x1ce3acbe98e93aa4, 0x8b9773634fa15b09, 0x7d5864313a7d2e05, 0xb8dfa8b486255c95, 0x408198ce5744b9eb), 5, 1.792224253297241e9, 0x01, ReentrantLock(), Any[])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_fabry_perot_dc/">« Fabry-Perot DC operating point</a><a class="docs-footer-nextpage" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 17 October 2026 08:05">Saturday 17 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
