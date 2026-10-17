@@ -50,21 +50,16 @@ ap_delay(n) = (s, τ) -> ((1 - s * τ / 2n) / (1 + s * τ / 2n))^n
 function fp_model(L_v, rep = Algebraic())
     @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
     @named m1 = Mirror(R = 0.99)
+    @named space = FreeSpace(L = L_v, λ = λ_sc, rep = rep)
     @named m2 = Mirror(R = 0.999)
-    @named L_fwd = FreeSpace(L = L_v, λ = λ_sc, rep = rep)
-    @named L_bwd = FreeSpace(L = L_v, λ = λ_sc, rep = rep)
     @named vac = Vacuum()
     eqs = [
-        connect(laser.port_out, m1.b_in),
-        connect(m1.b_out, laser.port_in),
-        connect(m1.f_out, L_fwd.port_in),
-        connect(L_fwd.port_out, m2.b_in),
-        connect(m2.b_out, L_bwd.port_in),
-        connect(L_bwd.port_out, m1.f_in),
-        connect(m2.f_out, vac.port_in),
-        connect(vac.port_out, m2.f_in),
+        link(laser.p1, m1.p1)
+        link(m1.p2, space.p1)
+        link(space.p2, m2.p1)
+        link(m2.p2, vac.p1)
     ]
-    @named fp = System(eqs, t; systems = [laser, m1, m2, L_fwd, L_bwd, vac])
+    @named fp = System(eqs, t; systems = [laser, m1, space, m2, vac])
     return fp, laser, m1, m2
 end
 
@@ -137,7 +132,7 @@ end
         ## exact blockwise identity at every frequency, since the rep is a
         ## real-rational function of s (conj-symmetric)
         Ωs = 2π .* (10.0 .^ range(3, 9.3; length = 9))
-        for (out, ychan) in ((m2.f_out, :vac), (m1.b_out, :laser))
+        for (out, ychan) in ((m2.p2.o, :vac), (m1.p1.o, :laser))
             mats, _ = linearize_proper(fp, [laser.δA, laser.δQ], [out.a[1], out.a[2]])
             resp = freqresp(ss(mats...), Ωs)
             iy = findfirst(==(ychan), parts.y)
@@ -164,7 +159,7 @@ end
     iy = findfirst(==(:vac), parts.y)
 
     Ωs = 2π .* (10.0 .^ range(5, log10(0.5 * c_sc / (2 * L_res_sc)); length = 12))
-    mats, _ = linearize_proper(fp, [laser.δA, laser.δQ], [m2.f_out.a[1], m2.f_out.a[2]])
+    mats, _ = linearize_proper(fp, [laser.δA, laser.δQ], [m2.p2.o.a[1], m2.p2.o.a[2]])
     resp = freqresp(ss(mats...), Ωs)
     for (k, Ω) in enumerate(Ωs)
         h_omtk = resp[1, 1, k] + im * resp[2, 1, k]
