@@ -75,8 +75,8 @@ coefficient `c` may be `√T` or the `cos 2ϕ`/`sin 2ϕ` of a tuning (including 
 `MovableMirror` position), which are numerically zero for a perfect reflector
 or at particular tunings, such as a cavity exactly on resonance. The compiled
 system is then silently singular. Before this rule, it produced an optical
-spring of 2×10⁹ N/m where the true value is 0. The price of forbidding it is a few
-more algebraic unknowns, and these networks are small.
+spring of 2×10⁹ N/m where the true value is 0. The price of forbidding it is a
+few more algebraic unknowns, and these networks are small.
 
 ## 7. How a delay is represented is chosen per analysis
 
@@ -115,6 +115,13 @@ terms that is singular at ``s = 0``. [`linearize_proper`](@ref) instead
 eliminates the index-1 algebraic block statically from the Jacobians MTK
 already computes. The states are then exactly the differential unknowns, and
 the result is proper and exact at DC.
+
+The linearization is also taken at a steady state. MTK solves only the
+algebraic unknowns at the operating point and leaves unset differential states
+at their guesses. For `PadeDelay` that means delay lines holding no light, so
+anything nonlinear in the field (radiation pressure, detected power) would be
+linearized around an empty cavity. `linearize_proper` first solves `ẋ = 0` for
+every differential state that `op` doesn't pin.
 
 ## 10. Tests are the documentation
 
