@@ -1,105 +1,101 @@
 # Solver strategy
 
-How OpticalModelingToolkit uses the SciML ecosystem, in one sentence: **emit
-the right problem types and let the ecosystem dispatch; build no numerical
-core.** (See `plans/PLAN_rationalize_late.md` §4 for the full rationale.)
+OMTK emits standard SciML problem types and lets the ecosystem dispatch. It
+has no numerical core of its own.
 
 ## DC operating point
 
-The steady-state field network is a `NonlinearProblem` solved with
-NonlinearSolve. The field network is linear given the inputs, so Newton
-converges in one step; NonlinearSolve already routes its inner solves through
-LinearSolve.
-
-Declare `guesses` — never defaults — on all algebraically-determined
-component variables. Defaults become `Initial()` constraints and
-overdetermine DAE initialization (this bug was found and fixed during the
-rtsmodel phase-3 work; `Photodetector.P` and `MovableMirror.x` carry guesses
-for exactly this reason).
-
-There is no sparse/KLU numerical core, deliberately: OMTK systems are dense
-and small (dozens of states), so LAPACK via the LinearSolve defaults is
-correct, and it is already in the stack transitively. Revisit only if models
-ever grow by two orders of magnitude.
-
-## AC analysis
-
-The route is: numeric linearization at the operating point, then everything
-downstream lives in ControlSystemsBase:
+Compile, then solve a `NonlinearProblem`:
 
 ```julia
-mats, ssys = linearize_proper(model, [laser.δA, laser.δQ], [pd.P])
+sys = mtkcompile(model)
+sol = solve(NonlinearProblem(sys, Dict(u => 0.0 for u in unknowns(sys))))
+```
+
+The unknowns are the incoming fields of every port (they are `irreducible`,
+see [Design](design.md) §5). Given its inputs, the field network is linear,
+so zero is a fine starting point and Newton converges in one step. A
+`MovableMirror` position makes it nonlinear in `x`, but `x` is bound by an
+equation, so the field solve stays linear.
+
+Component variables that are algebraically determined, such as
+`Photodetector.P` and `MovableMirror.F`, carry *guesses*, never defaults. A
+default becomes an `Initial()` constraint and overdetermines initialization.
+Follow the same rule in your own components.
+
+There is no sparse or KLU path, by design. These systems are small and dense,
+so the LinearSolve defaults are right.
+
+## Transfer functions
+
+Linearize at an operating point, then work in ControlSystemsBase:
+
+```julia
+mats, _ = linearize_proper(model, [laser.δA, laser.δQ], [pd.P]; op = Dict(...))
 
 using ControlSystemsBase
 sys = ss(mats...)
 freqresp(sys, ωs)     # or bodeplot, poles, dcgain, …
 ```
 
-OMTK writes no frequency-sweep code at all, and you land in the same toolbox
-Etalon's `pade` output lives in — one plotting/analysis idiom across both
-tools.
+Inputs are `[input = true]` variables, such as `LaserModulated.δA`/`δQ` or
+`MovableMirror.x`. Pass the value of a nonlinear input such as `x` in `op`,
+since the linearization depends on it.
 
-### Why `linearize_proper` and not `ModelingToolkit.linearize`
+Use [`linearize_proper`](@ref), not `ModelingToolkit.linearize`. The cavity's
+circulating fields are algebraic unknowns, and every `PadeDelay` section has
+direct feedthrough, so the field loops touch the inputs.
+`ModelingToolkit.linearize` keeps those unknowns as states by differentiating
+their constraints. This
 
-The circulating-field loops of a cavity survive `mtkcompile` as torn
-algebraic unknowns (tearing cannot eliminate them), and every all-pass
-`PadeDelay` section has direct feedthrough, so the loops touch the inputs.
-`ModelingToolkit.linearize` keeps those algebraic unknowns as states by
-differentiating their constraints, which
+- demands input-derivative columns (`allow_input_derivatives = true`), and
+- leaves one spurious zero eigenvalue per algebraic unknown, so the
+  realization is singular at `s = 0` and `dcgain` is wrong.
+  `ControlSystemsMTK.named_ss`'s descriptor cleanup returns wrong frequency
+  responses for these systems.
 
-- demands input-derivative columns (`allow_input_derivatives = true`,
-  `B = [B_u  B_u̇]`), and
-- leaves one spurious zero eigenvalue per algebraic unknown, so the returned
-  realization is singular at `s = 0` — `dcgain` is wrong — and
-  `ControlSystemsMTK.named_ss`'s descriptor-based cleanup (`dss2ss`) returns
-  wrong frequency responses for these systems.
+`linearize_proper` eliminates the index-1 algebraic block statically,
+``z = -g_z^{-1}(g_x x + g_u u)``, using the Jacobians MTK already computes. The
+result is proper, regular at `s = 0`, and its states are exactly the
+differential unknowns.
 
-For an index-1 DAE the honest reduction is static elimination of the
-algebraic block, `z = -g_z⁻¹(g_x x + g_u u)`, which is what
-[`linearize_proper`](@ref) does with the Jacobians MTK already computes. The
-result is proper (no `u̇`), regular at `s = 0`, and has exactly the
-differential unknowns as states. `ModelingToolkit.linearize_symbolic` remains
-useful as a pedagogical oracle (see `test/test_phase1b_fabry_perot_ac.jl`),
-with the same caveat about validity at `s = 0`.
+## Exact frequency response
 
-### Exact frequency-domain answers
+For frequency-domain questions, skip rationalization entirely and use
+[`to_scattering`](@ref):
 
-For frequency-domain questions you need not rationalize at all: lower the
-model with [`to_scattering`](@ref) and evaluate the exact transcendental
-response, FSR/comb physics included. With Etalon loaded,
-`Etalon.ScatteringSystem(model)` gives `freqresp` and `pade(sys; order)`
-directly.
+```julia
+parts = to_scattering(model)
+G(s) = parts.M3 * ((Diagonal(exp.(s .* parts.delays)) - parts.M1) \ parts.M2) + parts.M4
+```
+
+The channels `parts.u` and `parts.y` are named after the terminals (lasers,
+vacua, photodetectors). With Etalon loaded, `Etalon.ScatteringSystem(model)`
+wraps the same data.
 
 ## Time domain
 
-The composed optical network compiles to a **mass-matrix DAE**: the algebraic
-optical constraints survive `mtkcompile`, and tearing does not eliminate the
-circulating-field loops. Therefore:
+The compiled model is a mass-matrix DAE: the field network stays algebraic.
+Therefore:
 
-- Use Rosenbrock-family solvers: `Rodas5P` or `Rosenbrock23`. Explicit RK
-  refuses mass matrices.
-- With per-tick parameter callbacks (RTSCosim co-simulation), pass
-  `initializealg = BrownFullBasicInit()`. MTK v11's default re-initialization
-  after callbacks re-enforces `Initial(x)` and silently pins DAE plant states
-  (the rtsmodel phase-3 trap; RTSCosim's `simulate` already defaults to
-  this).
-- Stiffness is a non-issue: `PadeDelay` states live at `θ = τ/n` (~ns) and
-  callback tstops cap the step size anyway; Rosenbrock methods jump straight
-  onto the slow manifold, at no measured cost versus the algebraic
-  representation.
+- Use Rosenbrock-family solvers, `Rodas5P` or `Rosenbrock23`. Explicit RK
+  methods refuse mass matrices.
+- If parameter-changing callbacks run during integration (for example
+  co-simulation with a digital controller), pass
+  `initializealg = BrownFullBasicInit()`. MTK's default re-initialization
+  after a callback re-enforces `Initial(x)` and silently pins the plant
+  states.
+- `PadeDelay` states live on the `τ/n` timescale (nanoseconds). Stiffness is
+  not a problem for Rosenbrock methods, which step straight onto the slow
+  manifold.
 
 ## Choosing a propagation representation
 
-The representation is an analysis-time choice threaded in from the top of a
-model — never hard-coded in a component:
-
-| rep | states per `FreeSpace` | use for |
-|-----|------------------------|---------|
+| rep | real states per `FreeSpace` | use for |
+|-----|-----------------------------|---------|
 | `Algebraic()` | 0 | audio-band studies of short cavities (adiabatic limit) |
-| `PadeDelay(n)` | 2n | anything approaching `c/L`; FSR physics needs `n ≳ ωτ` |
-| `to_scattering` | — (exact, frequency domain only) | FSR/comb physics, convergence ground truth |
+| `PadeDelay(n)` | 4n | anything approaching `c/L`; FSR physics needs `n ≳ ωτ` |
+| `to_scattering` | (exact, frequency domain only) | FSR/comb physics, ground truth for convergence |
 
-`PadeDelay` sections are all-pass: passivity holds exactly at every order,
-and only the phase carries the `(ωθ)³/12` per-section error, `∝ n⁻²` at fixed
-`ωτ`. If a study ever wants `n > ~20`, the honest answer is the exact
-scattering bridge, not more states.
+The phase error of `PadeDelay(n)` is ``(\omega\tau)^3/12n^2``. If a study needs
+`n > ~20`, use the exact scattering form rather than more states.

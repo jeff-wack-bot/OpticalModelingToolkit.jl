@@ -28,7 +28,7 @@ using ControlSystemsBase: ss, dcgain
 const R1, R2 = 0.99, 0.999
 const r1, r2 = sqrt(R1), sqrt(R2)
 const t1, t2 = sqrt(1 - R1), sqrt(1 - R2)
-const λ0 = 1064e-9
+const λ0 = 1064.0e-9
 
 # A builder for the cavity. `m2` is a `MovableMirror`, so its position input
 # must be bound: `x` pins it, and `x = nothing` leaves it free to be named as a
@@ -80,11 +80,11 @@ cfield(sol, port) = complex(sol[port.a[1]], sol[port.a[2]])
     E_refl = r1 + t1 * r2 * P^2 * E_cav          # back toward the laser
     E_trans = t2 * P * E_cav                     # out of m2.p2
 
-    @test cfield(sol, c.m1.p2.o) ≈ E_cav rtol = 1e-10
-    @test cfield(sol, c.m1.p1.o) ≈ E_refl rtol = 1e-10
-    @test cfield(sol, c.m2.p2.o) ≈ E_trans rtol = 1e-10
-    @test sol[c.pd.P] ≈ abs2(E_trans) rtol = 1e-10
-    @test abs2(cfield(sol, c.m1.p1.o)) + sol[c.pd.P] ≈ 1 rtol = 1e-10
+    @test cfield(sol, c.m1.p2.o) ≈ E_cav rtol = 1.0e-10
+    @test cfield(sol, c.m1.p1.o) ≈ E_refl rtol = 1.0e-10
+    @test cfield(sol, c.m2.p2.o) ≈ E_trans rtol = 1.0e-10
+    @test sol[c.pd.P] ≈ abs2(E_trans) rtol = 1.0e-10
+    @test abs2(cfield(sol, c.m1.p1.o)) + sol[c.pd.P] ≈ 1 rtol = 1.0e-10
 end
 
 # ## The Airy fringe of a moving mirror
@@ -101,7 +101,7 @@ end
     P_t(x) = abs2(t1 * t2 / (1 + r1 * r2 * cis(2 * (2π / λ0) * (L + x))))
     for x in (0.0, 0.05e-9, -0.1e-9, 0.25e-9, 1.0e-9, λ0 / 4)
         fp, c = cavity(; L, x)
-        @test solve_dc(fp)[c.pd.P] ≈ P_t(x) rtol = 1e-9
+        @test solve_dc(fp)[c.pd.P] ≈ P_t(x) rtol = 1.0e-9
     end
 end
 
@@ -117,8 +117,8 @@ end
     fp, c = cavity(; L = λ0 / 2, x = λ0 / 4, A = sqrt(2.0))   # 2 W input
     sol = solve_dc(fp)
     P_c = abs2(cfield(sol, c.m2.p1.i))
-    @test P_c ≈ 2 * t1^2 / (1 - r1 * r2)^2 rtol = 1e-9
-    @test sol[c.m2.F] ≈ 2 * R2 * P_c / c0 rtol = 1e-9
+    @test P_c ≈ 2 * t1^2 / (1 - r1 * r2)^2 rtol = 1.0e-9
+    @test sol[c.m2.F] ≈ 2 * R2 * P_c / c0 rtol = 1.0e-9
 end
 
 # ## The optical spring
@@ -136,9 +136,9 @@ end
     c0, L = 299792458.0, λ0 / 2
     F(x) = 2R2 / c0 * abs2(t1 / (1 + r1 * r2 * cis(2 * (2π / λ0) * (L + x))))
     fp, c = cavity(; L, x = nothing)
-    for x0 in λ0 / 4 .+ (-2e-10, -5e-11, 0.0, 3e-11)
+    for x0 in λ0 / 4 .+ (-2.0e-10, -5.0e-11, 0.0, 3.0e-11)
         mats, _ = linearize_proper(fp, [c.m2.x], [c.m2.F]; op = Dict(c.m2.x => x0))
-        h = 1e-14
-        @test only(dcgain(ss(mats...))) ≈ (F(x0 + h) - F(x0 - h)) / 2h rtol = 1e-5 atol = 1e-3
+        h = 1.0e-14
+        @test only(dcgain(ss(mats...))) ≈ (F(x0 + h) - F(x0 - h)) / 2h rtol = 1.0e-5 atol = 1.0e-3
     end
 end

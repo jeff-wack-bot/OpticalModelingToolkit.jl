@@ -45,7 +45,8 @@ function to_scattering(model::System)
         r = SymbolicUtils.getmetadata(comp, OpticalComponent, nothing)
         r === nothing && error(
             "component $(nameof(comp)) carries no OpticalComponent metadata; " *
-            "to_scattering only understands optical components")
+                "to_scattering only understands optical components"
+        )
         role[nameof(comp)] = r
     end
 
@@ -60,7 +61,8 @@ function to_scattering(model::System)
             parts = split(string(nameof(sys)), '₊')
             length(parts) == 3 || error(
                 "connector $(nameof(sys)) is not component₊port₊(i|o); " *
-                "to_scattering requires a flat model of optical ports")
+                    "to_scattering requires a flat model of optical ports"
+            )
             (Symbol(parts[1]), Symbol(parts[2]), parts[3])
         end
         length(ends) == 2 && sort([e[3] for e in ends]) == ["i", "o"] ||

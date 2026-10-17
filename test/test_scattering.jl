@@ -27,7 +27,7 @@ using ModelingToolkit: t_nounits as t
 using ControlSystemsBase: ss, freqresp
 using LinearAlgebra
 
-const λ_sc = 1064e-9
+const λ_sc = 1064.0e-9
 const c_sc = 299792458.0
 
 # Transfer matrix ``G(s) = M_3 (E(-s) - M_1)^{-1} M_2 + M_4`` of a
@@ -103,8 +103,8 @@ const L_res_sc = (2 * round(Int, 0.1 / (λ_sc / 4)) + 1) * λ_sc / 4
         Ω = 2π * f
         P = cis(φ - Ω * τ_v)
         G = scattering_tf(parts, im * Ω)
-        @test G[iy_t, iu] ≈ t1 * t2 * P / (1 + r1 * r2 * P^2) rtol = 1e-6
-        @test G[iy_r, iu] ≈ r1 + t1^2 * r2 * P^2 / (1 + r1 * r2 * P^2) rtol = 1e-6
+        @test G[iy_t, iu] ≈ t1 * t2 * P / (1 + r1 * r2 * P^2) rtol = 1.0e-6
+        @test G[iy_r, iu] ≈ r1 + t1^2 * r2 * P^2 / (1 + r1 * r2 * P^2) rtol = 1.0e-6
     end
 end
 
@@ -122,7 +122,7 @@ end
     T = [1 1; -im im] / 2
 
     for (label, L_v) in (("undetuned", L_res_sc), ("detuned", L_res_sc + λ_sc / 17)),
-        (rep, delayfun) in ((Algebraic(), (s, τ) -> 1.0), (PadeDelay(2), ap_delay(2)))
+            (rep, delayfun) in ((Algebraic(), (s, τ) -> 1.0), (PadeDelay(2), ap_delay(2)))
 
         fp, laser, m1, m2 = fp_model(L_v, rep)
         parts = to_scattering(fp)
@@ -140,7 +140,7 @@ end
                 g₊ = scattering_tf(parts, im * Ω; delayfun)[iy, iu]
                 g₋ = conj(scattering_tf(parts, -im * Ω; delayfun)[iy, iu])
                 pred = T * Diagonal([g₊, g₋]) / T
-                @test resp[:, :, k] ≈ pred rtol = 1e-6 atol = 1e-12
+                @test resp[:, :, k] ≈ pred rtol = 1.0e-6 atol = 1.0e-12
             end
         end
     end
@@ -164,7 +164,7 @@ end
     for (k, Ω) in enumerate(Ωs)
         h_omtk = resp[1, 1, k] + im * resp[2, 1, k]
         h_exact = scattering_tf(parts, im * Ω)[iy, iu]
-        @test h_omtk ≈ h_exact rtol = 2e-3
+        @test h_omtk ≈ h_exact rtol = 2.0e-3
     end
 end
 
@@ -180,13 +180,13 @@ if Base.find_package("Etalon") !== nothing
         parts = to_scattering(fp)
         sys = Etalon.ScatteringSystem(fp)
         @test sys isa Etalon.ScatteringSystem
-        for f in (1e3, 1e6, 1e9, 2.3e9)
+        for f in (1.0e3, 1.0e6, 1.0e9, 2.3e9)
             s = im * 2π * f
-            @test sys(s) ≈ scattering_tf(parts, s) rtol = 1e-12
+            @test sys(s) ≈ scattering_tf(parts, s) rtol = 1.0e-12
         end
         println("✓ Etalon ScatteringSystem matches to_scattering exactly")
     end
 else
     @info "Etalon not in the test environment — cross-tool leg skipped " *
-          "(dev ~/dev/Etalon into the env to enable it)"
+        "(dev ~/dev/Etalon into the env to enable it)"
 end

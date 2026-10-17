@@ -32,10 +32,14 @@ Feed the matrices straight into `ControlSystemsBase`:
 
 Keyword arguments are forwarded to `ModelingToolkit.linearization_function`.
 """
-function linearize_proper(model::System, inputs, outputs;
-        op = Dict(), t = 0.0, kwargs...)
-    linfun, ssys = ModelingToolkit.linearization_function(model, inputs, outputs;
-        op, warn_empty_op = false, kwargs...)
+function linearize_proper(
+        model::System, inputs, outputs;
+        op = Dict(), t = 0.0, kwargs...
+    )
+    linfun, ssys = ModelingToolkit.linearization_function(
+        model, inputs, outputs;
+        op, warn_empty_op = false, kwargs...
+    )
     prob = ModelingToolkit.LinearizationProblem(linfun, t)
     linres = prob.f(state_values(prob), parameter_values(prob), prob.t)
     (; f_x, f_z, g_x, g_z, f_u, g_u, h_x, h_z, h_u) = linres
@@ -44,10 +48,14 @@ function linearize_proper(model::System, inputs, outputs;
 
     gz = lu(g_z; check = false)
     issuccess(gz) ||
-        error("g_z is not invertible: the DAE is of index > 1, or an " *
-              "algebraic loop is singular at this operating point")
+        error(
+        "g_z is not invertible: the DAE is of index > 1, or an " *
+            "algebraic loop is singular at this operating point"
+    )
     zx = -(gz \ g_x)
     zu = -(gz \ g_u)
-    return (A = f_x + f_z * zx, B = f_u + f_z * zu,
-        C = h_x + h_z * zx, D = h_u + h_z * zu), ssys
+    return (
+            A = f_x + f_z * zx, B = f_u + f_z * zu,
+            C = h_x + h_z * zx, D = h_u + h_z * zu,
+        ), ssys
 end
