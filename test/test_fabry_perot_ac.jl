@@ -6,13 +6,14 @@
 # own. The reference is the representation-parameterized analytic response
 #
 # ```math
-# H(s) = \frac{t_1}{1 + r_1 r_2 P(s)^2}, \qquad P(s) = e^{ikL}\,\mathrm{AP}_n(s)
+# H(s) = \frac{t_1}{1 - r_1 r_2 P(s)^2}, \qquad P(s) = \mathrm{AP}_n(s)
 # ```
 #
-# with ``\mathrm{AP}_n`` the order-``n`` all-pass cascade (here ``n = 1``).
+# with ``\mathrm{AP}_n`` the order-``n`` all-pass cascade (here ``n = 1``), for a
+# cavity on resonance (zero tuning).
 #
 # The input is the laser's quadrature modulation pair `(δA, δQ)`; the outputs
-# are the quadratures of the right-going intracavity field leaving `m1.p2`.
+# are the quadratures of the intracavity field leaving `m1.p1`.
 
 using Test
 using OpticalModelingToolkit
@@ -27,30 +28,26 @@ using ControlSystemsBase: ss, freqresp, poles, dcgain
     r1_v = sqrt(R1)
     r2_v = sqrt(R2)
     t1_v = sqrt(1 - R1)
-    λ_v = 1064.0e-9
     c_v = 299792458.0
-    ## Macroscopic length ≈ 0.1 m, exactly on resonance with our scattering
-    ## convention: exp(2 i k L) = -1 ⇒ L = (2n+1) λ/4.
-    n_quarter = round(Int, 0.1 / (λ_v / 4))
-    L_v = (2 * n_quarter + 1) * λ_v / 4
+    L_v = 0.1                       # resonant: zero tuning
     τ_v = L_v / c_v
 
     ## Model: PadeDelay(1), one all-pass section per direction, 4 states
     @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
     @named m1 = Mirror(R = R1)
-    @named space = FreeSpace(L = L_v, λ = λ_v, rep = PadeDelay(1))
+    @named space = FreeSpace(L = L_v, rep = PadeDelay(1))
     @named m2 = Mirror(R = R2)
     @named vac = Vacuum()
     eqs = [
-        link(laser.p1, m1.p1)
-        link(m1.p2, space.p1)
+        link(laser.p1, m1.p2)
+        link(m1.p1, space.p1)
         link(space.p2, m2.p1)
         link(m2.p2, vac.p1)
     ]
     @named fp = System(eqs, t; systems = [laser, m1, space, m2, vac])
 
     inputs = [laser.δA, laser.δQ]
-    outputs = [m1.p2.o.a[1], m1.p2.o.a[2]]
+    outputs = [m1.p1.o.a[1], m1.p1.o.a[2]]
 
     ## Ecosystem path: numeric linearization → StateSpace → ControlSystemsBase
     mats, _ = linearize_proper(fp, inputs, outputs)
@@ -67,15 +64,14 @@ using ControlSystemsBase: ss, freqresp, poles, dcgain
     Hnum = [resp[1, 1, k] + im * resp[2, 1, k] for k in eachindex(ωs)]
 
     ## Analytic reference, parameterized by the representation.
-    ## P(s) = e^{ikL}(1 - sτ/2)/(1 + sτ/2): all-pass, so |H| is exact at every
+    ## P(s) = (1 - sτ/2)/(1 + sτ/2): all-pass, so |H| is exact at every
     ## frequency and only the phase carries the (ωτ)³/12 section error.
-    exp2ikL = cis(2 * 2π * L_v / λ_v)  # ≈ -1 by construction
     Hana = function (ω)
         ap = (1 - im * ω * τ_v / 2) / (1 + im * ω * τ_v / 2)
-        t1_v / (1 + r1_v * r2_v * exp2ikL * ap^2)
+        t1_v / (1 - r1_v * r2_v * ap^2)
     end
     for (k, ω) in enumerate(ωs)
-        @test Hnum[k] ≈ Hana(ω) rtol = 1.0e-8 atol = 1.0e-12
+        @test Hnum[k] ≈ Hana(ω) rtol = 1.0e-10
     end
 
     ## DC gain: the algebraic intracavity buildup t1/(1 - r1 r2), identical in

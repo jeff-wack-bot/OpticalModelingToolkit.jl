@@ -11,7 +11,7 @@ operating points, linearized transfer functions, time-domain transients, and
 exact frequency responses with every propagation delay kept transcendental.
 
 ```julia
-eqs = [link(laser.p1, m1.p1); link(m1.p2, space.p1); link(space.p2, m2.p1); link(m2.p2, pd.p1)]
+eqs = [link(laser.p1, m1.p2); link(m1.p1, space.p1); link(space.p2, m2.p1); link(m2.p2, pd.p1)]
 @named cavity = System(eqs, t; systems = [laser, m1, space, m2, pd])
 ```
 

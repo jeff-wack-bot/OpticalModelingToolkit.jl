@@ -28,11 +28,11 @@ const M_om, fm_om, Q_om = 0.1, 20.0, 2.0
 const k_om = M_om * (2π * fm_om)^2
 
 # The radiation pressure force on the end mirror as a function of its position
-# `x` (zero at an anti-resonance, `λ/4` on resonance), for input power `Pin`:
+# `x` (zero on resonance), for input power `Pin`:
 
 function F_analytic(x, Pin)
     r1, r2, t1 = sqrt(R1_om), sqrt(R2_om), sqrt(1 - R1_om)
-    return 2R2_om / c_om * Pin * abs2(t1 / (1 + r1 * r2 * cis(2 * (2π / λ_om) * (λ_om / 2 + x))))
+    return 2R2_om / c_om * Pin * abs2(t1 / (1 - r1 * r2 * cis(2 * (2π / λ_om) * x)))
 end
 
 # The model. `controller` adds equations closing a loop around the plant; with
@@ -41,14 +41,14 @@ end
 function suspended_cavity(; Pin, x_rest, controller = nothing)
     @named laser = Laser(A = sqrt(Pin))
     @named m1 = Mirror(R = R1_om)
-    @named space = FreeSpace(L = λ_om / 2, λ = λ_om)
+    @named space = FreeSpace(L = 0.1)
     @named m2 = MovableMirror(R = R2_om, λ = λ_om)
     @named pd = Photodetector()
     @variables x(t) = x_rest v(t) = 0.0 Fext(t) [input = true]
     ωm = 2π * fm_om
     eqs = [
-        link(laser.p1, m1.p1)
-        link(m1.p2, space.p1)
+        link(laser.p1, m1.p2)
+        link(m1.p1, space.p1)
         link(space.p2, m2.p1)
         link(m2.p2, pd.p1)
         m2.x ~ x
@@ -72,13 +72,13 @@ end
 # ```
 #
 # The equilibrium position balances the suspension and the light,
-# ``k(x^* - x_\mathrm{rest}) = F(x^*)``. Beyond the resonance (``x^* > \lambda/4``)
+# ``k(x^* - x_\mathrm{rest}) = F(x^*)``. Beyond the resonance (``x^* > 0``)
 # the light stiffens the suspension. Short of it the optical spring is negative
 # and much stronger than the suspension, so the mirror is unstable.
 
 @testset "optical spring shifts the suspension resonance" begin
     Pin = 50.0
-    for x_star in (λ_om / 4 + 0.3e-9, λ_om / 4 - 0.3e-9)
+    for x_star in (0.3e-9, -0.3e-9)
         x_rest = x_star - F_analytic(x_star, Pin) / k_om
         plant, c = suspended_cavity(; Pin, x_rest)
         mats, _ = linearize_proper(plant, [c.Fext], [c.x]; op = Dict(c.x => x_star, c.v => 0.0))
@@ -91,7 +91,7 @@ end
         p = poles(ss(mats...))
         @test sort(p; by = z -> (imag(z), real(z))) ≈
             sort(expected; by = z -> (imag(z), real(z))) rtol = 1.0e-6
-        if x_star > λ_om / 4
+        if x_star > 0
             ## stiffened: the 20 Hz resonance moves up by more than 2×
             @test sqrt(cc / M_om) / 2π > 2fm_om
         else
@@ -117,8 +117,8 @@ end
     P_set = P_peak / 2
     ## half-power point on the far side of the resonance, where dP/dx < 0
     P_t(x) = Pin * (1 - R1_om) * (1 - R2_om) /
-        abs2(1 + r1r2 * cis(2 * (2π / λ_om) * (λ_om / 2 + x)))
-    lo, hi = λ_om / 4, 3λ_om / 8
+        abs2(1 - r1r2 * cis(2 * (2π / λ_om) * x))
+    lo, hi = 0.0, λ_om / 8
     for _ in 1:100
         mid = (lo + hi) / 2
         P_t(mid) > P_set ? (lo = mid) : (hi = mid)

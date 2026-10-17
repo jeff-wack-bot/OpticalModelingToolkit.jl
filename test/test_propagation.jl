@@ -22,7 +22,6 @@ using ModelingToolkit: t_nounits as t
 using ControlSystemsBase: ss, freqresp
 
 const c_v = 299792458.0
-const λ_v = 1064.0e-9
 
 # The complex field transfer function from the modulation quadrature pair
 # `(δA, δQ)` to an output quadrature pair: with the carrier at ``\phi = 0`` a
@@ -52,14 +51,13 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
 @testset "all-pass sections: unit magnitude, n⁻² phase error" begin
     L_v = 0.1
     τ_v = L_v / c_v
-    φ_v = 2π * L_v / λ_v
 
     orders = (1, 2, 4, 8, 16)
     ωτ_grid = (0.05, 0.2, 0.5, 1.0, 2.0, π, 5.0)
     phase_err = Dict{Int, Float64}()   # at the reference point ωτ = 0.5
     for n in orders
         @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
-        @named fs = FreeSpace(L = L_v, λ = λ_v, rep = PadeDelay(n))
+        @named fs = FreeSpace(L = L_v, rep = PadeDelay(n))
         @named vac = Vacuum()
         eqs = [link(laser.p1, fs.p1); link(fs.p2, vac.p1)]
         @named line = System(eqs, t; systems = [laser, fs, vac])
@@ -74,7 +72,7 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
             ## passivity: exactly all-pass at every order and frequency
             @test abs(h[k]) ≈ 1 atol = 1.0e-12
             ## the state-space realization is exactly the section cascade
-            @test h[k] ≈ cis(φ_v) * ap_exact(ωτ / τ_v, τ_v / n, n) rtol = 1.0e-9
+            @test h[k] ≈ ap_exact(ωτ / τ_v, τ_v / n, n) rtol = 1.0e-12
         end
 
         ω_ref = 0.5 / τ_v
@@ -82,7 +80,7 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
             line, [laser.δA, laser.δQ],
             [fs.p2.o.a[1], fs.p2.o.a[2]], [ω_ref]
         )[1]
-        phase_err[n] = abs(angle(h_ref * conj(cis(φ_v - ω_ref * τ_v))))
+        phase_err[n] = abs(angle(h_ref * cis(ω_ref * τ_v)))
     end
 
     ## phase error ∝ n⁻² at fixed ωτ: each doubling of n gains ×4, and the
@@ -102,12 +100,12 @@ end
 function fp_model(L_v, rep)
     @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
     @named m1 = Mirror(R = 0.99)
-    @named space = FreeSpace(L = L_v, λ = λ_v, rep = rep)
+    @named space = FreeSpace(L = L_v, rep = rep)
     @named m2 = Mirror(R = 0.999)
     @named vac = Vacuum()
     eqs = [
-        link(laser.p1, m1.p1)
-        link(m1.p2, space.p1)
+        link(laser.p1, m1.p2)
+        link(m1.p1, space.p1)
         link(space.p2, m2.p1)
         link(m2.p2, vac.p1)
     ]
@@ -115,28 +113,24 @@ function fp_model(L_v, rep)
     return fp, laser, m1, m2
 end
 
-# The exact transcendental transmission ``t_1 t_2 P / (1 + r_1 r_2 P^2)``,
-# ``P = e^{i(\phi - \Omega\tau)}``, from the laser modulation to `m2.p2.o` (same
-# scattering convention as the components, so ``e^{2i\phi} = -1`` on resonance):
+# The exact transcendental transmission ``t_1 t_2 P / (1 - r_1 r_2 P^2)``,
+# ``P = e^{-i\Omega\tau}``, from the laser modulation to `m2.p2.o`, for the
+# cavity on resonance (zero tuning):
 
 function fp_exact_transmission(L_v)
     r1, r2 = sqrt(0.99), sqrt(0.999)
     t1, t2 = sqrt(1 - 0.99), sqrt(1 - 0.999)
     τ = L_v / c_v
-    φ = 2π * L_v / λ_v
     return ω -> begin
-        P = cis(φ - ω * τ)
-        t1 * t2 * P / (1 + r1 * r2 * P^2)
+        P = cis(-ω * τ)
+        t1 * t2 * P / (1 - r1 * r2 * P^2)
     end
 end
 
-# Resonant macroscopic length ≈ 0.1 m: ``L = (2m+1)\lambda/4 \Rightarrow
-# e^{2ikL} = -1``.
-
-const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
+const L_cav = 0.1
 
 @testset "Fabry-Perot convergence to the exact delay response" begin
-    τ_v = L_res / c_v
+    τ_v = L_cav / c_v
     fsr = π / τ_v                    # FSR in angular frequency, = 2π·c/2L
     ## Band up to 60% of the FSR: away from the resonance peaks the response
     ## is smooth and the pointwise relative error is dominated by the phase
@@ -144,12 +138,12 @@ const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
     ## gives O(1) pointwise error at every order — peak location is tested
     ## separately below.)
     ωs = collect(range(0.01 * fsr, 0.6 * fsr; length = 121))
-    H_ex = fp_exact_transmission(L_res)
+    H_ex = fp_exact_transmission(L_cav)
 
     maxerr = Float64[]
     orders = (1, 2, 4, 8, 16)
     for n in orders
-        fp, laser, m1, m2 = fp_model(L_res, PadeDelay(n))
+        fp, laser, m1, m2 = fp_model(L_cav, PadeDelay(n))
         h = field_tf(
             fp, [laser.δA, laser.δQ],
             [m2.p2.o.a[1], m2.p2.o.a[2]], ωs
@@ -162,7 +156,7 @@ const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
     @test maxerr[end] < 0.01
 
     ## FSR physics: the first free-spectral-range peak sits at Ω = π/τ = 2π·c/2L
-    fp, laser, m1, m2 = fp_model(L_res, PadeDelay(16))
+    fp, laser, m1, m2 = fp_model(L_cav, PadeDelay(16))
     ω_scan = collect(range(0.9 * fsr, 1.1 * fsr; length = 401))
     h_scan = field_tf(
         fp, [laser.δA, laser.δQ],
@@ -186,34 +180,32 @@ end
 # ``\approx 1\%`` at 10 kHz for this 0.1 m cavity.
 
 @testset "representation invariance in the audio band" begin
-    τ_v = L_res / c_v
-    H_ex = fp_exact_transmission(L_res)
+    τ_v = L_cav / c_v
+    H_ex = fp_exact_transmission(L_cav)
     ω_audio = 2π .* (10.0 .^ range(1, 4; length = 13))   # 10 Hz – 10 kHz
 
-    fp_alg, laser, m1, m2 = fp_model(L_res, Algebraic())
+    fp_alg, laser, m1, m2 = fp_model(L_cav, Algebraic())
     h_alg = field_tf(
         fp_alg, [laser.δA, laser.δQ],
         [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio
     )
 
-    fp_p1, laser, m1, m2 = fp_model(L_res, PadeDelay(1))
+    fp_p1, laser, m1, m2 = fp_model(L_cav, PadeDelay(1))
     h_p1 = field_tf(
         fp_p1, [laser.δA, laser.δQ],
         [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio
     )
 
-    fp_p4, laser, m1, m2 = fp_model(L_res, PadeDelay(4))
+    fp_p4, laser, m1, m2 = fp_model(L_cav, PadeDelay(4))
     h_p4 = field_tf(
         fp_p4, [laser.δA, laser.δQ],
         [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio
     )
 
     for (k, ω) in enumerate(ω_audio)
-        ## PadeDelay is audio-band-exact at any order; the tolerance is the
-        ## finesse-amplified roundoff floor of the closed loop, not a
-        ## representation error
-        @test h_p1[k] ≈ H_ex(ω) rtol = 1.0e-6
-        @test h_p4[k] ≈ H_ex(ω) rtol = 1.0e-6
+        ## PadeDelay is audio-band-exact at any order
+        @test h_p1[k] ≈ H_ex(ω) rtol = 1.0e-9
+        @test h_p4[k] ≈ H_ex(ω) rtol = 1.0e-9
         ## the adiabatic representation agrees to the cavity-pole correction
         @test h_alg[k] ≈ H_ex(ω) rtol = 0.02
     end

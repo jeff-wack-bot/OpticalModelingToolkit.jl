@@ -13,7 +13,7 @@ sol = solve(NonlinearProblem(sys, Dict(u => 0.0 for u in unknowns(sys))))
 ```
 
 The unknowns are the incoming fields of every port (they are `irreducible`,
-see [Design](design.md) §5). Given its inputs, the field network is linear,
+see [Design](design.md) §6). Given its inputs, the field network is linear,
 so zero is a fine starting point and Newton converges in one step. A
 `MovableMirror` position makes it nonlinear in `x`, but `x` is bound by an
 equation, so the field solve stays linear.

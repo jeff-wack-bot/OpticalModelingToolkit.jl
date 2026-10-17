@@ -53,19 +53,32 @@ The time-domain model and the exact frequency-domain lowering can't drift
 apart, because they come from the same table. A new component written this way
 joins both with no changes elsewhere.
 
-## 5. The field network is solved forward, never inverted
+## 5. Lengths are macroscopic; positions are tunings
+
+A `FreeSpace` is a pure delay `L/c`. Its carrier phase `kL` is taken to be a
+whole number of wavelengths, and microscopic positions are a separate tuning
+`ϕ` on each mirror or beamsplitter, which reflects with
+``\pm r e^{\pm 2i\phi}``. This is how Finesse and Breadboard describe
+interferometers. A 10 cm cavity is resonant at zero tuning with no
+sub-wavelength bookkeeping of `L`. Numerically, no phase is ever computed from
+a ~10⁶ rad argument whose roundoff the cavity finesse would amplify. A
+`MovableMirror`'s position `x` simply adds `kx` to its tuning.
+
+## 6. The field network is solved forward, never inverted
 
 Incoming fields are marked `irreducible`, so they always stay unknowns of the
 compiled system. The only variable MTK's tearing may solve for in a component
 equation is the outgoing field, whose coefficient is 1.
 
 Without this, tearing is free to solve `o = c·i` for `i`, dividing by `c`. The
-coefficient `c` may be `sin(2πL/λ)`, `√T` or `sin(2kx)`, which are numerically
-zero for a half-wave space, a perfect reflector, or a cavity on resonance. The
-compiled system is then silently singular. The price of forbidding it is a few
+coefficient `c` may be `√T` or the `cos 2ϕ`/`sin 2ϕ` of a tuning (including a
+`MovableMirror` position), which are numerically zero for a perfect reflector
+or at particular tunings, such as a cavity exactly on resonance. The compiled
+system is then silently singular. Before this rule, it produced an optical
+spring of 2×10⁹ N/m where the true value is 0. The price of forbidding it is a few
 more algebraic unknowns, and these networks are small.
 
-## 6. How a delay is represented is chosen per analysis
+## 7. How a delay is represented is chosen per analysis
 
 Free-space propagation is the only place where optical dynamics enter. *How*
 the delay is represented is a property of the analysis, not of the component:
@@ -77,7 +90,7 @@ The all-pass choice matters. Every section has ``|H(i\omega)| = 1``, so
 passivity holds at every order and only the phase is approximate. A low-pass
 "delay" silently dissipates energy above ``1/\tau``.
 
-## 7. Rationalize as late as possible, and in the frequency domain never
+## 8. Rationalize as late as possible, and in the frequency domain never
 
 A time-domain integrator needs a finite state vector, so `PadeDelay` is as
 late as rationalization can happen there. Frequency-domain questions don't
@@ -93,17 +106,17 @@ ground truth that `PadeDelay(n)` converges to. The form is the one Breadboard's
 `ScatteringSystem` uses, so a model can be handed to Breadboard field for
 field.
 
-## 8. Linearization eliminates the algebraic block
+## 9. Linearization eliminates the algebraic block
 
 Circulating-field loops survive compilation as algebraic unknowns (and decision
-5 guarantees they do). `ModelingToolkit.linearize` keeps them as states behind
+6 guarantees they do). `ModelingToolkit.linearize` keeps them as states behind
 differentiated constraints, which gives a realization with input-derivative
 terms that is singular at ``s = 0``. [`linearize_proper`](@ref) instead
 eliminates the index-1 algebraic block statically from the Jacobians MTK
 already computes. The states are then exactly the differential unknowns, and
 the result is proper and exact at DC.
 
-## 9. Tests are the documentation
+## 10. Tests are the documentation
 
 Every file in `test/` is a [Literate](https://github.com/fredrikekre/Literate.jl)
 script: `runtests.jl` runs it, and `docs/make.jl` renders it as an *Examples*

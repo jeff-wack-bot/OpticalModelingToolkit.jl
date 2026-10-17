@@ -17,12 +17,12 @@ using OpticalModelingToolkit, ModelingToolkit, NonlinearSolve
 using ModelingToolkit: t_nounits as t
 
 @named laser = Laser(A = 1.0)
-@named m1 = Mirror(R = 0.99)
-@named space = FreeSpace(L = 1064e-9 / 4)   # on resonance
-@named m2 = Mirror(R = 0.999)
+@named m1 = Mirror(R = 0.99)          # reflective face p1, toward the cavity
+@named space = FreeSpace(L = 0.1)
+@named m2 = Mirror(R = 0.999)         # resonant at zero tuning ϕ
 @named pd = Photodetector()
 
-eqs = [link(laser.p1, m1.p1); link(m1.p2, space.p1); link(space.p2, m2.p1); link(m2.p2, pd.p1)]
+eqs = [link(laser.p1, m1.p2); link(m1.p1, space.p1); link(space.p2, m2.p1); link(m2.p2, pd.p1)]
 @named cavity = System(eqs, t; systems = [laser, m1, space, m2, pd])
 
 sys = mtkcompile(cavity)
