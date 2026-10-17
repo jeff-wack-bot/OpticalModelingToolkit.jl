@@ -42,6 +42,12 @@ Inputs are `[input = true]` variables, such as `LaserModulated.δA`/`δQ` or
 `MovableMirror.x`. Pass the value of a nonlinear input such as `x` in `op`,
 since the linearization depends on it.
 
+The linearization is taken at a steady state. Differential states that `op`
+doesn't set, such as the `PadeDelay` states holding the circulating field, are
+solved for `ẋ = 0` first. Pin states that have no unique steady state, such as
+a free mass's position, in `op`. MTK's own linearization leaves unset states at
+their guesses, which here means a cavity with empty delay lines.
+
 Use [`linearize_proper`](@ref), not `ModelingToolkit.linearize`. The cavity's
 circulating fields are algebraic unknowns, and every `PadeDelay` section has
 direct feedthrough, so the field loops touch the inputs.
@@ -70,8 +76,9 @@ G(s) = parts.M3 * ((Diagonal(exp.(s .* parts.delays)) - parts.M1) \ parts.M2) + 
 ```
 
 The channels `parts.u` and `parts.y` are named after the terminals (lasers,
-vacua, photodetectors). With Etalon loaded, `Etalon.ScatteringSystem(model)`
-wraps the same data.
+vacua, photodetectors). The fields match Breadboard's `ScatteringSystem`, so
+`Breadboard.ScatteringSystem(to_scattering(model)...)` hands the model to
+Breadboard.
 
 ## Time domain
 

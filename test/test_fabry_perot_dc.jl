@@ -34,10 +34,10 @@ const λ0 = 1064.0e-9
 # must be bound: `x` pins it, and `x = nothing` leaves it free to be named as a
 # linearization input.
 
-function cavity(; L, x = 0.0, A = 1.0)
+function cavity(; L, x = 0.0, A = 1.0, rep = Algebraic())
     @named laser = Laser(; A)
     @named m1 = Mirror(R = R1)
-    @named space = FreeSpace(; L, λ = λ0)
+    @named space = FreeSpace(; L, λ = λ0, rep)
     @named m2 = MovableMirror(R = R2, λ = λ0)
     @named pd = Photodetector()
     eqs = [
@@ -141,4 +141,12 @@ end
         h = 1.0e-14
         @test only(dcgain(ss(mats...))) ≈ (F(x0 + h) - F(x0 - h)) / 2h rtol = 1.0e-5 atol = 1.0e-3
     end
+
+    ## with delay states the linearization must still be taken at the steady
+    ## state, where the delay lines hold the circulating field
+    x0 = λ0 / 4 - 5.0e-11
+    fp, c = cavity(; L, x = nothing, rep = PadeDelay(2))
+    mats, _ = linearize_proper(fp, [c.m2.x], [c.m2.F]; op = Dict(c.m2.x => x0))
+    h = 1.0e-14
+    @test only(dcgain(ss(mats...))) ≈ (F(x0 + h) - F(x0 - h)) / 2h rtol = 1.0e-5
 end

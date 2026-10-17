@@ -1,6 +1,6 @@
 # # Propagation representations
 #
-# Three validations from PLAN_rationalize_late §7:
+# Three checks of the `PadeDelay` representation:
 #
 # 1. **All-pass unit test**: every `PadeDelay` section has ``|H(i\omega)| = 1``
 #    to machine precision; phase error scales ``\propto n^{-2}`` at fixed

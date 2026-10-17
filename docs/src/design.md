@@ -89,9 +89,9 @@ G(s) = M_3\,\bigl(E(-s) - M_1\bigr)^{-1} M_2 + M_4,
 ```
 
 with every delay exact, so FSR and comb physics are included. This is also the
-ground truth that `PadeDelay(n)` converges to. The form is Etalon's
-`ScatteringSystem`, and a package extension provides
-`Etalon.ScatteringSystem(model)`.
+ground truth that `PadeDelay(n)` converges to. The form is the one Breadboard's
+`ScatteringSystem` uses, so a model can be handed to Breadboard field for
+field.
 
 ## 8. Linearization eliminates the algebraic block
 

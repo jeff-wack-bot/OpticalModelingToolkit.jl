@@ -65,6 +65,24 @@ eqs = [link(laser.p1, m1.p1); link(m1.p2, space.p1); link(space.p2, m2.p1)]
 """
 link(p, q) = [connect(p.o, q.i), connect(q.o, p.i)]
 
+"""
+    expose(outer, inner) -> Vector{Equation}
+
+Inside a subassembly, make the port `inner` of one of its components available
+as the subassembly's own port `outer`: the field arriving at `outer` passes in
+to `inner`, and the field leaving `inner` passes out through `outer`.
+
+```julia
+@component function Cavity(; name, L)
+    @named m1 = Mirror(); @named space = FreeSpace(; L); @named m2 = Mirror()
+    @named p1 = OpticalPort(); @named p2 = OpticalPort()
+    eqs = [expose(p1, m1.p1); link(m1.p2, space.p1); link(space.p2, m2.p1); expose(p2, m2.p2)]
+    return System(eqs, t; name, systems = [m1, space, m2, p1, p2])
+end
+```
+"""
+expose(outer, inner) = [connect(outer.i, inner.i), connect(inner.o, outer.o)]
+
 # Components are written in complex arithmetic and realified here: `field`
 # reads a connector as a `Complex{Num}`, `emit` sets a connector from one.
 

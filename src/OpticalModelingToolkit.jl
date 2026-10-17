@@ -5,12 +5,13 @@ module OpticalModelingToolkit
 using LinearAlgebra: lu, issuccess
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
+using SymbolicIndexingInterface
 using SymbolicIndexingInterface: state_values, parameter_values
 using Symbolics
 using Symbolics: SymbolicUtils
 
 include("ports.jl")
-export OpticalIn, OpticalOut, OpticalPort, link
+export OpticalIn, OpticalOut, OpticalPort, link, expose
 
 include("components.jl")
 export Mirror, MovableMirror, Beamsplitter, FreeSpace

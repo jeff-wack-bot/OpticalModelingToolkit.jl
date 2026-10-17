@@ -3,8 +3,8 @@
 #
 # For frequency-domain questions the model need not rationalize at all: every
 # FreeSpace stays an exact delay `e^{-sτ}` with its static rotation folded into
-# the adjacent matrix entries (as Etalon's `_collapse_linearspaces` does). The
-# result is the data of Etalon's `ScatteringSystem`:
+# the adjacent matrix entries. The result is the data of Breadboard's
+# `ScatteringSystem`:
 #
 #   ( x'    )   ( M1  M2 ) ( E(s) x )
 #   (       ) = (        ) (        )
@@ -18,13 +18,14 @@
 
 Lower a composed (not yet `mtkcompile`d) optical model to the canonical
 transcendental scattering form. Returns `(M1, M2, M3, M4, delays, x, u, y)`,
-field for field the contents of an Etalon `ScatteringSystem`, so that
+field for field the contents of a Breadboard `ScatteringSystem`, so that
 
     G(s) = M3 * ((Diagonal(exp.(s .* delays)) - M1) \\ M2) + M4
 
 is the exact transfer matrix from the external inputs `u` to the external
-outputs `y`, FSR physics included. With Etalon loaded,
-`Etalon.ScatteringSystem(model)` wraps this directly.
+outputs `y`, FSR physics included. With Breadboard loaded,
+`Breadboard.ScatteringSystem(to_scattering(model)...)` gives its solvers and
+`pade` rationalization.
 
 The lowering works on the scalar complex amplitude and reads only the
 [`OpticalComponent`](@ref) metadata of each component: `x` indexes directed
@@ -35,45 +36,74 @@ input and one output channel named after it. Any `PropagationRep` is ignored;
 the delays here are exact. Components scatter at their constructor values (a
 `MovableMirror` at `x = 0`).
 
-Requires a flat model: all components and `link`/`connect` equations at the top
-level, and every optical port wired.
+Subassemblies are flattened: a subsystem without `OpticalComponent` metadata is
+searched for optical components, and its own ports may pass fields through to
+them (`connect(p1.i, m1.p1.i)`, `connect(m1.p1.o, p1.o)`). Components are
+named by their full path, e.g. `Symbol("cavity₊m1")`. Non-optical subsystems
+and equations are ignored. Every optical port of every component must be
+wired.
 """
 function to_scattering(model::System)
-    comps = ModelingToolkit.get_systems(model)
+    # Optical components (by full path) and the connectors each connect
+    # equation joins, at every level of the hierarchy.
     role = Dict{Symbol, Any}()
-    for comp in comps
-        r = SymbolicUtils.getmetadata(comp, OpticalComponent, nothing)
-        r === nothing && error(
-            "component $(nameof(comp)) carries no OpticalComponent metadata; " *
-                "to_scattering only understands optical components"
-        )
-        role[nameof(comp)] = r
+    order = Symbol[]
+    joined = Vector{Vector{String}}()
+    function walk(sys, prefix)
+        for eq in ModelingToolkit.get_eqs(sys)
+            rhs = SymbolicUtils.unwrap_const(Symbolics.unwrap(eq.rhs))
+            rhs isa ModelingToolkit.Connection || continue
+            push!(joined, [prefix * string(nameof(c)) for c in rhs.systems])
+        end
+        for sub in ModelingToolkit.get_systems(sys)
+            path = prefix * string(nameof(sub))
+            r = SymbolicUtils.getmetadata(sub, OpticalComponent, nothing)
+            if r === nothing
+                walk(sub, path * "₊")
+            else
+                role[Symbol(path)] = r
+                push!(order, Symbol(path))
+            end
+        end
+        return
+    end
+    walk(model, "")
+
+    # Connected connectors carry one field. Union them; each class must hold
+    # exactly one component `o` (where the field is made) and one component
+    # `i` (where it arrives), plus any subassembly ports it passes through.
+    parent = Dict{String, String}()
+    root(c) = (p = get!(parent, c, c); p == c ? c : (parent[c] = root(p)))
+    for cs in joined, c in cs[2:end]
+        parent[root(c)] = root(cs[1])
+    end
+    Port = Tuple{Symbol, Symbol}
+    ends = Dict{String, Dict{String, Vector{Port}}}()
+    for c in keys(parent)
+        parts = split(c, '₊')
+        length(parts) ≥ 3 || continue
+        owner = Symbol(join(parts[1:(end - 2)], '₊'))
+        haskey(role, owner) && parts[end] in ("i", "o") || continue
+        class = get!(() -> Dict("i" => Port[], "o" => Port[]), ends, root(c))
+        push!(class[parts[end]], (owner, Symbol(parts[end - 1])))
     end
 
-    # Directed links (src, dst, delay, phase) between ports (component, port),
-    # from the model's connect equations, each `comp₊port₊o` → `comp₊port₊i`.
-    Port = Tuple{Symbol, Symbol}
+    # Directed links (src, dst, delay, phase) between component ports.
     links = Tuple{Port, Port, Float64, Float64}[]
-    for eq in ModelingToolkit.get_eqs(model)
-        rhs = SymbolicUtils.unwrap_const(Symbolics.unwrap(eq.rhs))
-        rhs isa ModelingToolkit.Connection || continue
-        ends = map(rhs.systems) do sys
-            parts = split(string(nameof(sys)), '₊')
-            length(parts) == 3 || error(
-                "connector $(nameof(sys)) is not component₊port₊(i|o); " *
-                    "to_scattering requires a flat model of optical ports"
-            )
-            (Symbol(parts[1]), Symbol(parts[2]), parts[3])
-        end
-        length(ends) == 2 && sort([e[3] for e in ends]) == ["i", "o"] ||
-            error("expected a pairwise o → i connection, got $eq")
-        src, dst = ends[1][3] == "o" ? ends : reverse(ends)
-        push!(links, (src[1:2], dst[1:2], 0.0, 0.0))
+    for class in values(ends)
+        o, i = class["o"], class["i"]
+        length(o) == 1 && length(i) == 1 || error(
+            "a field must leave one port and arrive at one port; found it leaving " *
+                "$(join(o, ", ", " and ")) and arriving at $(join(i, ", ", " and "))"
+        )
+        push!(links, (only(o), only(i), 0.0, 0.0))
     end
+    sort!(links)
 
     # Collapse propagators: the link into one side and the link out of the
     # other fuse into a single edge carrying the delay and rotation.
-    for (name, r) in role
+    for name in order
+        r = role[name]
         r isa Propagator || continue
         for (a, b) in ((:p1, :p2), (:p2, :p1))
             i = findfirst(l -> l[2] == (name, a), links)
@@ -87,21 +117,15 @@ function to_scattering(model::System)
         end
     end
 
-    src_of = Dict{Port, Int}()
-    dst_of = Dict{Port, Int}()
-    for (k, (src, dst, _, _)) in enumerate(links)
-        haskey(src_of, src) && error("port $src sources two connections")
-        haskey(dst_of, dst) && error("port $dst sinks two connections")
-        src_of[src] = k
-        dst_of[dst] = k
-    end
+    src_of = Dict(l[1] => k for (k, l) in enumerate(links))
+    dst_of = Dict(l[2] => k for (k, l) in enumerate(links))
     function edge(table, port)
         k = get(table, port, 0)
         k == 0 && error("optical port $(port[1]).$(port[2]) is not wired")
         return k
     end
 
-    ext = [nameof(c) for c in comps if role[nameof(c)] isa Terminal]
+    ext = [name for name in order if role[name] isa Terminal]
     chan = Dict(name => e for (e, name) in enumerate(ext))
     K, E = length(links), length(ext)
     M1 = zeros(ComplexF64, K, K)
@@ -110,7 +134,8 @@ function to_scattering(model::System)
     M4 = zeros(ComplexF64, E, E)
     rot = [cis(l[4]) for l in links]    # folded propagator rotation per edge
 
-    for (name, r) in role
+    for name in order
+        r = role[name]
         if r isa Terminal
             M2[edge(src_of, (name, :p1)), chan[name]] = 1
             k = edge(dst_of, (name, :p1))

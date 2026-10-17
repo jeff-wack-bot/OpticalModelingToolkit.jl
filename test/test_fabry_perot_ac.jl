@@ -1,10 +1,9 @@
 # # Fabry-Perot AC transfer function
 #
-# The AC analysis route through the ecosystem path (PLAN_rationalize_late §4,
-# validation 4): numeric linearization at the operating point
-# (`linearize_proper`) → ControlSystemsBase (`ss` / `freqresp` / `poles` /
-# `dcgain`). OMTK writes no frequency-sweep code of its own. The reference is
-# the representation-parameterized analytic response
+# Transfer functions through the ecosystem path: numeric linearization at the
+# operating point (`linearize_proper`), then ControlSystemsBase (`ss`,
+# `freqresp`, `poles`, `dcgain`). OMTK writes no frequency-sweep code of its
+# own. The reference is the representation-parameterized analytic response
 #
 # ```math
 # H(s) = \frac{t_1}{1 + r_1 r_2 P(s)^2}, \qquad P(s) = e^{ikL}\,\mathrm{AP}_n(s)
