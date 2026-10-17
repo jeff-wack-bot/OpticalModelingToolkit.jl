@@ -15,12 +15,10 @@ history; `docs/src/design.md` records the decisions that came out of them.
   Breadboard's `ScatteringSystem`.
 - Radiation pressure: optical springs from linearization, and time-domain
   lock acquisition with an MTK servo.
+- Subassemblies (`expose`), flattened by `to_scattering`.
 
 ## Open
 
-- **Hierarchical models in `to_scattering`.** The time-domain path accepts
-  subassemblies (a reusable `FabryPerot` subsystem) as MTK does, but
-  `to_scattering` needs a flat model.
 - **Mechanical port.** `MovableMirror` exposes `x` (input) and `F` (output) as
   signals, and mechanics are written as equations. The alternative is an
   acausal `ModelingToolkitStandardLibrary.Mechanical.TranslationalPosition`
