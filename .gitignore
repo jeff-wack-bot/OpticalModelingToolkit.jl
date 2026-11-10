@@ -3,9 +3,3 @@
 /docs/build/
 /docs/src/generated/
 
-# Local Python interpreters / installers — never commit
-Miniforge3-*.sh
-Miniconda3-*.sh
-
-# Cloned upstream sources for reference (populated by scripts/setup.sh)
-/context/
