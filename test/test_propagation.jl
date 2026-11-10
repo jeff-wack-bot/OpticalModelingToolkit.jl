@@ -44,9 +44,9 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
 
 # ## All-pass sections: unit magnitude, ``n^{-2}`` phase error
 #
-# A single `FreeSpace` in a ring with a modulated laser: the laser drives the
-# space, and the space's output terminates in the laser's absorbing port. Each
-# `PadeDelay` section is exactly all-pass, and the phase error at fixed
+# A single `FreeSpace` between a modulated laser and a vacuum termination: the
+# transfer function from the laser to the far side of the space is the delay
+# realization itself. Each `PadeDelay` section is exactly all-pass, and the phase error at fixed
 # ``\omega\tau`` shrinks by ``\times 4`` each time the order doubles.
 
 @testset "all-pass sections: unit magnitude, n⁻² phase error" begin
@@ -60,13 +60,13 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
     for n in orders
         @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
         @named fs = FreeSpace(L = L_v, λ = λ_v, rep = PadeDelay(n))
-        eqs = [connect(laser.port_out, fs.port_in),
-               connect(fs.port_out, laser.port_in)]
-        @named ring = System(eqs, t; systems = [laser, fs])
+        @named vac = Vacuum()
+        eqs = [link(laser.p1, fs.p1); link(fs.p2, vac.p1)]
+        @named line = System(eqs, t; systems = [laser, fs, vac])
 
         ωs = collect(ωτ_grid) ./ τ_v
-        h = field_tf(ring, [laser.δA, laser.δQ],
-            [fs.port_out.a[1], fs.port_out.a[2]], ωs)
+        h = field_tf(line, [laser.δA, laser.δQ],
+            [fs.p2.o.a[1], fs.p2.o.a[2]], ωs)
 
         for (k, ωτ) in enumerate(ωτ_grid)
             ## passivity: exactly all-pass at every order and frequency
@@ -76,8 +76,8 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
         end
 
         ω_ref = 0.5 / τ_v
-        h_ref = field_tf(ring, [laser.δA, laser.δQ],
-            [fs.port_out.a[1], fs.port_out.a[2]], [ω_ref])[1]
+        h_ref = field_tf(line, [laser.δA, laser.δQ],
+            [fs.p2.o.a[1], fs.p2.o.a[2]], [ω_ref])[1]
         phase_err[n] = abs(angle(h_ref * conj(cis(φ_v - ω_ref * τ_v))))
     end
 
@@ -98,26 +98,21 @@ end
 function fp_model(L_v, rep)
     @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
     @named m1 = Mirror(R = 0.99)
+    @named space = FreeSpace(L = L_v, λ = λ_v, rep = rep)
     @named m2 = Mirror(R = 0.999)
-    @named L_fwd = FreeSpace(L = L_v, λ = λ_v, rep = rep)
-    @named L_bwd = FreeSpace(L = L_v, λ = λ_v, rep = rep)
     @named vac = Vacuum()
     eqs = [
-        connect(laser.port_out, m1.b_in),
-        connect(m1.b_out, laser.port_in),
-        connect(m1.f_out, L_fwd.port_in),
-        connect(L_fwd.port_out, m2.b_in),
-        connect(m2.b_out, L_bwd.port_in),
-        connect(L_bwd.port_out, m1.f_in),
-        connect(m2.f_out, vac.port_in),
-        connect(vac.port_out, m2.f_in),
+        link(laser.p1, m1.p1)
+        link(m1.p2, space.p1)
+        link(space.p2, m2.p1)
+        link(m2.p2, vac.p1)
     ]
-    @named fp = System(eqs, t; systems = [laser, m1, m2, L_fwd, L_bwd, vac])
+    @named fp = System(eqs, t; systems = [laser, m1, space, m2, vac])
     return fp, laser, m1, m2
 end
 
 # The exact transcendental transmission ``t_1 t_2 P / (1 + r_1 r_2 P^2)``,
-# ``P = e^{i(\phi - \Omega\tau)}``, from the laser modulation to `m2.f_out` (same
+# ``P = e^{i(\phi - \Omega\tau)}``, from the laser modulation to `m2.p2.o` (same
 # scattering convention as the components, so ``e^{2i\phi} = -1`` on resonance):
 
 function fp_exact_transmission(L_v)
@@ -152,7 +147,7 @@ const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
     for n in orders
         fp, laser, m1, m2 = fp_model(L_res, PadeDelay(n))
         h = field_tf(fp, [laser.δA, laser.δQ],
-            [m2.f_out.a[1], m2.f_out.a[2]], ωs)
+            [m2.p2.o.a[1], m2.p2.o.a[2]], ωs)
         push!(maxerr, maximum(abs.(h .- H_ex.(ωs)) ./ abs.(H_ex.(ωs))))
     end
     ## the approximation order is a convergence knob: error decreases
@@ -164,7 +159,7 @@ const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
     fp, laser, m1, m2 = fp_model(L_res, PadeDelay(16))
     ω_scan = collect(range(0.9 * fsr, 1.1 * fsr; length = 401))
     h_scan = field_tf(fp, [laser.δA, laser.δQ],
-        [m2.f_out.a[1], m2.f_out.a[2]], ω_scan)
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_scan)
     ω_peak = ω_scan[argmax(abs.(h_scan))]
     @test abs(ω_peak - fsr) / fsr < 0.01
 
@@ -187,15 +182,15 @@ end
 
     fp_alg, laser, m1, m2 = fp_model(L_res, Algebraic())
     h_alg = field_tf(fp_alg, [laser.δA, laser.δQ],
-        [m2.f_out.a[1], m2.f_out.a[2]], ω_audio)
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio)
 
     fp_p1, laser, m1, m2 = fp_model(L_res, PadeDelay(1))
     h_p1 = field_tf(fp_p1, [laser.δA, laser.δQ],
-        [m2.f_out.a[1], m2.f_out.a[2]], ω_audio)
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio)
 
     fp_p4, laser, m1, m2 = fp_model(L_res, PadeDelay(4))
     h_p4 = field_tf(fp_p4, [laser.δA, laser.δQ],
-        [m2.f_out.a[1], m2.f_out.a[2]], ω_audio)
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio)
 
     for (k, ω) in enumerate(ω_audio)
         ## PadeDelay is audio-band-exact at any order; the tolerance is the
