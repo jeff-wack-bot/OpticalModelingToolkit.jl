@@ -2,9 +2,8 @@
 # form: "rationalizing latest".
 #
 # For frequency-domain questions the model need not rationalize at all: every
-# FreeSpace stays an exact delay `e^{-sτ}` with its static rotation folded into
-# the adjacent matrix entries. The result is the data of Breadboard's
-# `ScatteringSystem`:
+# FreeSpace stays an exact delay `e^{-sτ}` on the edge it collapses into. The
+# result is the data of Breadboard's `ScatteringSystem`:
 #
 #   ( x'    )   ( M1  M2 ) ( E(s) x )
 #   (       ) = (        ) (        )
@@ -30,7 +29,7 @@ outputs `y`, FSR physics included. With Breadboard loaded,
 The lowering works on the scalar complex amplitude and reads only the
 [`OpticalComponent`](@ref) metadata of each component: `x` indexes directed
 edges, each [`Propagator`](@ref) (`FreeSpace`) collapses into an exact delay on
-its edges with its rotation folded into the next matrix entry, and each
+its edges, and each
 [`Terminal`](@ref) (`Laser`, `Vacuum`, `Photodetector`, …) contributes one
 input and one output channel named after it. Any `PropagationRep` is ignored;
 the delays here are exact. Components scatter at their constructor values (a
@@ -88,20 +87,20 @@ function to_scattering(model::System)
         push!(class[parts[end]], (owner, Symbol(parts[end - 1])))
     end
 
-    # Directed links (src, dst, delay, phase) between component ports.
-    links = Tuple{Port, Port, Float64, Float64}[]
+    # Directed links (src, dst, delay) between component ports.
+    links = Tuple{Port, Port, Float64}[]
     for class in values(ends)
         o, i = class["o"], class["i"]
         length(o) == 1 && length(i) == 1 || error(
             "a field must leave one port and arrive at one port; found it leaving " *
                 "$(join(o, ", ", " and ")) and arriving at $(join(i, ", ", " and "))"
         )
-        push!(links, (only(o), only(i), 0.0, 0.0))
+        push!(links, (only(o), only(i), 0.0))
     end
     sort!(links)
 
     # Collapse propagators: the link into one side and the link out of the
-    # other fuse into a single edge carrying the delay and rotation.
+    # other fuse into a single edge carrying the delay.
     for name in order
         r = role[name]
         r isa Propagator || continue
@@ -110,10 +109,10 @@ function to_scattering(model::System)
             j = findfirst(l -> l[1] == (name, b), links)
             (i === nothing || j === nothing) &&
                 error("FreeSpace $name is not wired on both sides")
-            src, _, τ1, φ1 = links[i]
-            _, dst, τ2, φ2 = links[j]
+            src, _, τ1 = links[i]
+            _, dst, τ2 = links[j]
             deleteat!(links, sort([i, j]))
-            push!(links, (src, dst, τ1 + τ2 + r.τ, φ1 + φ2 + r.φ))
+            push!(links, (src, dst, τ1 + τ2 + r.τ))
         end
     end
 
@@ -132,22 +131,19 @@ function to_scattering(model::System)
     M2 = zeros(ComplexF64, K, E)
     M3 = zeros(ComplexF64, E, K)
     M4 = zeros(ComplexF64, E, E)
-    rot = [cis(l[4]) for l in links]    # folded propagator rotation per edge
 
     for name in order
         r = role[name]
         if r isa Terminal
             M2[edge(src_of, (name, :p1)), chan[name]] = 1
-            k = edge(dst_of, (name, :p1))
-            M3[chan[name], k] = rot[k]
+            M3[chan[name], edge(dst_of, (name, :p1))] = 1
         elseif r isa Scatterer
             for (o, i, c) in r.S
-                k = edge(dst_of, (name, i))
-                M1[edge(src_of, (name, o)), k] += c * rot[k]
+                M1[edge(src_of, (name, o)), edge(dst_of, (name, i))] += c
             end
         end
     end
 
-    x = [Symbol(s[1], '_', s[2], '→', d[1], '_', d[2]) for (s, d, _, _) in links]
+    x = [Symbol(s[1], '_', s[2], '→', d[1], '_', d[2]) for (s, d, _) in links]
     return (; M1, M2, M3, M4, delays = [l[3] for l in links], x, u = ext, y = copy(ext))
 end

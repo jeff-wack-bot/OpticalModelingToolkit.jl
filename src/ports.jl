@@ -12,9 +12,9 @@
 # Every component equation then has exactly one variable tearing may solve for,
 # its outgoing field, with coefficient 1, and every connection solves `o = i`.
 # Without this, tearing solves component equations backwards, dividing by
-# coefficients such as `sin(2πL/λ)`, `√T` or `sin(2kx)` that can be numerically
-# zero (a `FreeSpace` with `L = λ/2`, a mirror with `T = 0`, a cavity on
-# resonance) and silently make the compiled system singular. The field network
+# coefficients such as `√T` or the `cos 2ϕ`/`sin 2ϕ` of a tuning that can be
+# numerically zero (a mirror with `T = 0`, a cavity on resonance) and silently
+# make the compiled system singular. The field network
 # is solved forward, as in Finesse, never inverted.
 #
 # A physical port is the pair: `OpticalPort` bundles an `i::OpticalIn` and an

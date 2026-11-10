@@ -22,7 +22,6 @@ using ModelingToolkit: t_nounits as t
 using ControlSystemsBase: ss, freqresp
 using LinearAlgebra
 
-const λ_sc = 1064.0e-9
 const c_sc = 299792458.0
 
 # Transfer matrix ``G(s) = M_3 (E(-s) - M_1)^{-1} M_2 + M_4`` of a
@@ -40,17 +39,17 @@ end
 
 ap_delay(n) = (s, τ) -> ((1 - s * τ / 2n) / (1 + s * τ / 2n))^n
 
-# Fabry-Perot with a modulated laser; `L` sets the (de)tuning.
+# Fabry-Perot with a modulated laser, reflective faces inward; `ϕ2` detunes it.
 
-function fp_model(L_v, rep = Algebraic())
+function fp_model(L_v, rep = Algebraic(); ϕ2 = 0.0)
     @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
     @named m1 = Mirror(R = 0.99)
-    @named space = FreeSpace(L = L_v, λ = λ_sc, rep = rep)
-    @named m2 = Mirror(R = 0.999)
+    @named space = FreeSpace(L = L_v, rep = rep)
+    @named m2 = Mirror(R = 0.999, ϕ = ϕ2)
     @named vac = Vacuum()
     eqs = [
-        link(laser.p1, m1.p1)
-        link(m1.p2, space.p1)
+        link(laser.p1, m1.p2)
+        link(m1.p1, space.p1)
         link(space.p2, m2.p1)
         link(m2.p2, vac.p1)
     ]
@@ -58,9 +57,7 @@ function fp_model(L_v, rep = Algebraic())
     return fp, laser, m1, m2
 end
 
-# Resonant macroscopic length ≈ 0.1 m: ``e^{2ikL} = -1``.
-
-const L_res_sc = (2 * round(Int, 0.1 / (λ_sc / 4)) + 1) * λ_sc / 4
+const L_res_sc = 0.1
 
 # ## Exact transcendental Fabry-Perot response
 #
@@ -88,18 +85,14 @@ const L_res_sc = (2 * round(Int, 0.1 / (λ_sc / 4)) + 1) * λ_sc / 4
 
     r1, r2 = sqrt(0.99), sqrt(0.999)
     t1, t2 = sqrt(1 - 0.99), sqrt(1 - 0.999)
-    φ = 2π * L_res_sc / λ_sc
 
-    ## Transcendental sweep across two FSRs. Tolerance: near resonance the
-    ## closed-loop denominator amplifies the large-angle trig roundoff of
-    ## φ ≈ 6e5 rad by the finesse (~2e2), so ~1e-8 relative is the float-level
-    ## agreement, not a physics error.
+    ## transcendental sweep across two FSRs
     for f in 10.0 .^ range(2, log10(2.2 * c_sc / (2 * L_res_sc)); length = 40)
         Ω = 2π * f
-        P = cis(φ - Ω * τ_v)
+        P = cis(-Ω * τ_v)
         G = scattering_tf(parts, im * Ω)
-        @test G[iy_t, iu] ≈ t1 * t2 * P / (1 + r1 * r2 * P^2) rtol = 1.0e-6
-        @test G[iy_r, iu] ≈ r1 + t1^2 * r2 * P^2 / (1 + r1 * r2 * P^2) rtol = 1.0e-6
+        @test G[iy_t, iu] ≈ t1 * t2 * P / (1 - r1 * r2 * P^2) rtol = 1.0e-9
+        @test G[iy_r, iu] ≈ -r1 + t1^2 * r2 * P^2 / (1 - r1 * r2 * P^2) rtol = 1.0e-9
     end
 end
 
@@ -116,10 +109,10 @@ end
 @testset "A-matrix keystone: two-photon block ↔ scalar sidebands" begin
     T = [1 1; -im im] / 2
 
-    for (label, L_v) in (("undetuned", L_res_sc), ("detuned", L_res_sc + λ_sc / 17)),
+    for ϕ2 in (0.0, π / 17),
             (rep, delayfun) in ((Algebraic(), (s, τ) -> 1.0), (PadeDelay(2), ap_delay(2)))
 
-        fp, laser, m1, m2 = fp_model(L_v, rep)
+        fp, laser, m1, m2 = fp_model(L_res_sc, rep; ϕ2)
         parts = to_scattering(fp)
         iu = findfirst(==(:laser), parts.u)
 
@@ -127,7 +120,7 @@ end
         ## exact blockwise identity at every frequency, since the rep is a
         ## real-rational function of s (conj-symmetric)
         Ωs = 2π .* (10.0 .^ range(3, 9.3; length = 9))
-        for (out, ychan) in ((m2.p2.o, :vac), (m1.p1.o, :laser))
+        for (out, ychan) in ((m2.p2.o, :vac), (m1.p2.o, :laser))
             mats, _ = linearize_proper(fp, [laser.δA, laser.δQ], [out.a[1], out.a[2]])
             resp = freqresp(ss(mats...), Ωs)
             iy = findfirst(==(ychan), parts.y)
@@ -135,7 +128,7 @@ end
                 g₊ = scattering_tf(parts, im * Ω; delayfun)[iy, iu]
                 g₋ = conj(scattering_tf(parts, -im * Ω; delayfun)[iy, iu])
                 pred = T * Diagonal([g₊, g₋]) / T
-                @test resp[:, :, k] ≈ pred rtol = 1.0e-6 atol = 1.0e-12
+                @test resp[:, :, k] ≈ pred rtol = 1.0e-9 atol = 1.0e-12
             end
         end
     end
@@ -172,13 +165,13 @@ end
 
 @component function Cavity(; name, L, rep = Algebraic())
     @named m1 = Mirror(R = 0.99)
-    @named space = FreeSpace(; L, λ = λ_sc, rep)
+    @named space = FreeSpace(; L, rep)
     @named m2 = Mirror(R = 0.999)
     @named p1 = OpticalPort()
     @named p2 = OpticalPort()
     eqs = [
-        expose(p1, m1.p1)
-        link(m1.p2, space.p1)
+        expose(p1, m1.p2)
+        link(m1.p1, space.p1)
         link(space.p2, m2.p1)
         expose(p2, m2.p2)
     ]
@@ -195,7 +188,7 @@ end
     pn, pf = to_scattering(nested), to_scattering(flat)
     @test pn.u == pf.u == [:laser, :vac]
     @test sort(pn.delays) == sort(pf.delays)
-    @test any(x -> startswith(string(x), "cav₊m1_p2→cav₊m2_p1"), pn.x)
+    @test any(x -> startswith(string(x), "cav₊m1_p1→cav₊m2_p1"), pn.x)
     for f in (0.0, 1.0e3, 1.0e6, 1.0e9)
         s = im * 2π * f
         @test scattering_tf(pn, s) ≈ scattering_tf(pf, s) rtol = 1.0e-12
@@ -204,5 +197,5 @@ end
     ## the time-domain path compiles the same hierarchy: matching DC response
     mats, _ = linearize_proper(nested, [laser.δA, laser.δQ], [cav.m2.p2.o.a[1], cav.m2.p2.o.a[2]])
     g = scattering_tf(pn, 0.0)[2, 1]
-    @test mats.D[1, 1] + im * mats.D[2, 1] ≈ g rtol = 1.0e-6
+    @test mats.D[1, 1] + im * mats.D[2, 1] ≈ g rtol = 1.0e-10
 end
