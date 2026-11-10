@@ -5,6 +5,7 @@ module OpticalModelingToolkit
 using LinearAlgebra: lu, issuccess
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
+using SymbolicIndexingInterface
 using SymbolicIndexingInterface: state_values, parameter_values
 using Symbolics
 using Symbolics: SymbolicUtils
