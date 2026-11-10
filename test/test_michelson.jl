@@ -30,7 +30,7 @@ using ModelingToolkit: t_nounits as t
 using NonlinearSolve
 using LinearAlgebra
 
-const λ_mi = 1064e-9
+const λ_mi = 1064.0e-9
 const c_mi = 299792458.0
 
 function michelson(; Lx, Ly, R = 0.5, laser = LaserModulated)
@@ -72,9 +72,9 @@ end
         k = 2π / λ_mi
         P_as = abs2(sqrt(R * (1 - R)) * (cis(2k * (Lx + ΔL)) - cis(2k * Lx)))
         ## arm phases 2kL ~ 1e7 rad: trig roundoff limits agreement to ~1e-9
-        @test sol[c.pd.P] ≈ P_as atol = 1e-8
+        @test sol[c.pd.P] ≈ P_as atol = 1.0e-8
         P_sym = sol[c.src.p1.i.a[1]]^2 + sol[c.src.p1.i.a[2]]^2
-        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1e-10
+        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-10
     end
 end
 
@@ -96,10 +96,10 @@ end
     iy = findfirst(==(:pd), parts.y)
     k = 2π / λ_mi
     r, τ = sqrt(0.4), sqrt(0.6)
-    for f in (0.0, 1e3, 1e6, 7.7e7, 3e8)
+    for f in (0.0, 1.0e3, 1.0e6, 7.7e7, 3.0e8)
         s = im * 2π * f
         G = parts.M3 * ((Diagonal(exp.(s .* parts.delays)) - parts.M1) \ parts.M2) + parts.M4
         expected = r * τ * (exp(2im * k * Ly - 2s * Ly / c_mi) - exp(2im * k * Lx - 2s * Lx / c_mi))
-        @test G[iy, iu] ≈ expected rtol = 1e-9
+        @test G[iy, iu] ≈ expected rtol = 1.0e-9
     end
 end
