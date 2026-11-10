@@ -40,11 +40,22 @@ From the same model:
 - **Delay dynamics in the time domain**: rebuild with
   `FreeSpace(rep = PadeDelay(n))`.
 
+## One model, two simulators
+
+A model written as a KatScript file in `models/` is read by both OMT and
+[Finesse.jl](https://git.mccullerlab.com/software/finesse.jl): Finesse solves its
+frequency response, and [`build_kat`](@ref) builds the same network, including
+suspensions, readouts and servo filters, for OMT to simulate in time. See
+[Shared models with Finesse.jl](models.md).
+
 ## Where to read next
 
 - [Design](design.md): the handful of decisions that shape the package.
 - [Solver strategy](solvers.md): which SciML problem types and solvers to use,
   and why.
+- [Shared models with Finesse.jl](models.md): the single-source-of-truth
+  models, the conventions that map one code onto the other, and how they compare.
+- [Simulation projects](projects.md): what this combination is good for.
 - The worked examples are the test suite. Every page under *Examples* is a test
   file, rendered.
 - [API](api.md).
