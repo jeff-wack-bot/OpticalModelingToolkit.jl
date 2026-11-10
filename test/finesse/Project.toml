@@ -1,0 +1,15 @@
+[deps]
+ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
+Finesse = "3f0a5c1e-8d4b-4c7a-9e26-b1d3f7a05c48"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+OpticalModelingToolkit = "bb4db5ec-ef24-4afd-b24a-b7700d736f30"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SignalFlowLU = "e2da16b7-ae54-4334-a835-0ab0992f6c2b"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+Finesse = {rev = "main", url = "https://git.mccullerlab.com/software/finesse.jl.git"}
+OpticalModelingToolkit = {path = "../.."}
+SignalFlowLU = {rev = "main", url = "https://git.mccullerlab.com/software/signalflowlu.jl.git"}

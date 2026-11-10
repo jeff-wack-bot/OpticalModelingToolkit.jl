@@ -1,32 +1,100 @@
 # Optical components.
 #
-# Plane-wave (TEM₀₀) optics. Static components (Mirror, Laser, Vacuum) are pure
-# constraints between their input and output sub-ports; free-space propagation
-# is the one place dynamics can enter, and *how* it is represented is an
-# analysis-time choice threaded in through `FreeSpace(rep = ...)` — never an
-# element identity (plans/PLAN_rationalize_late.md §2).
+# Plane-wave (TEM₀₀) optics on the complex envelope. Every component is written
+# once, in complex arithmetic, as a scattering table: a list of
+# `(out_port, in_port) => amplitude` entries saying how much of the field
+# entering `in_port` leaves through `out_port`. The same table function is
+# evaluated twice:
 #
-# Sign conventions follow plans/REFINED_PLAN.md §4 and the user-defined mirror
-# scattering convention.
+#   - with symbolic parameters, giving the component's MTK equations (realified
+#     by `emit`, so every complex product becomes a 2×2 real block), and
+#   - with numbers, giving the `OpticalComponent` metadata that `to_scattering`
+#     reads to lower a composed model to the exact frequency-domain form.
+#
+# Free-space propagation is the one place dynamics enter, and *how* the delay is
+# represented is an analysis-time choice threaded in through
+# `FreeSpace(rep = ...)`, never part of the component's identity.
+#
+# Conventions (shared with Breadboard and, up to signs, Finesse):
+#
+#   - Lengths are macroscopic: a `FreeSpace` is a pure delay `L/c`, and the
+#     carrier phase `kL` is taken to be a whole number of wavelengths.
+#     Microscopic positions are tunings `ϕ` on the scatterers.
+#   - A mirror's `p1` face is the reflective (HR) face: it reflects with
+#     `+r e^{2iϕ}`, the `p2` face with `-r e^{-2iϕ}`, and transmission is `+t`
+#     both ways. For `R + T = 1` the scattering matrix is unitary. A cavity
+#     whose mirrors face each other with their `p1` faces is resonant at zero
+#     tuning.
 
 # -----------------------------------------------------------------------------
 # Component metadata
 # -----------------------------------------------------------------------------
-#
-# Every component stamps its `System` metadata with `OpticalComponent =>
-# (kind = ..., <numeric constructor parameters>)`. `to_scattering`
-# (scattering.jl) walks this metadata to lower a composed model to the
-# canonical scattering form without pattern-matching on equations.
 
 """
     OpticalComponent
 
-`System`-metadata key under which every OpticalModelingToolkit component
-records its kind and numeric constructor parameters, e.g.
-`(kind = :Mirror, r = 0.995, t = 0.1)`. Read with
-`SymbolicUtils.getmetadata(sys, OpticalComponent, nothing)`.
+`System`-metadata key under which every optical component records its role in
+the scattering network. `to_scattering` reads it to lower a composed model; the
+value is one of
+
+  - [`Scatterer`](@ref): a static linear map between ports,
+  - [`Propagator`](@ref): a two-port delay with a phase rotation,
+  - [`Terminal`](@ref): a one-port source or sink, which becomes an external
+    channel.
+
+A new component joins the frequency-domain lowering by setting this metadata.
 """
 struct OpticalComponent end
+
+"""
+    Scatterer(S)
+
+Role of a component whose ports are related by the static complex scattering
+table `S`, a vector of `(out_port, in_port, amplitude)` triples.
+"""
+struct Scatterer
+    S::Vector{Tuple{Symbol, Symbol, ComplexF64}}
+end
+Scatterer(S::AbstractVector{<:Pair}) = Scatterer([(o, i, ComplexF64(c)) for ((o, i), c) in S])
+
+"""
+    Propagator(τ)
+
+Role of a two-port (`p1`, `p2`) that delays the field by `τ` in both
+directions.
+"""
+struct Propagator
+    τ::Float64
+end
+
+"""
+    Terminal()
+
+Role of a one-port (`p1`) source or sink. In the scattering form, the field it
+emits is an external input channel and the field it receives is an external
+output channel, both named after the component.
+"""
+struct Terminal end
+
+# `n` optical ports named p1, …, pn, as a NamedTuple.
+function optical_ports(n)
+    names = ntuple(k -> Symbol(:p, k), n)
+    return NamedTuple{names}(map(name -> OpticalPort(; name), names))
+end
+
+# Realified equations `p.o = Σ S[p, q] · q.i` for every port `p`, from a table
+# of `(out, in) => amplitude` pairs over the `ports` NamedTuple.
+function scattering_equations(ports::NamedTuple, S)
+    eqs = Equation[]
+    for (name, port) in pairs(ports)
+        z = zero(Complex{Num})
+        for ((o, i), c) in S
+            o == name && (z += c * field(ports[i].i))
+        end
+        append!(eqs, emit(port.o, z))
+    end
+    return eqs
+end
 
 # -----------------------------------------------------------------------------
 # Propagation representations
@@ -39,8 +107,8 @@ How `FreeSpace` propagation is represented in the time domain. Passed to
 `FreeSpace(rep = ...)` and threaded down from the top of a model, so switching
 a whole model between representations is a one-argument change per analysis:
 
-  - [`Algebraic`](@ref) — static phase rotation, the adiabatic limit.
-  - [`PadeDelay`](@ref) — order-n all-pass rational approximation of the delay.
+  - [`Algebraic`](@ref): static phase rotation, the adiabatic limit.
+  - [`PadeDelay`](@ref): order-n all-pass rational approximation of the delay.
 
 For frequency-domain questions that need the *exact* transcendental delay, do
 not rationalize at all: lower the model with [`to_scattering`](@ref).
@@ -50,9 +118,9 @@ abstract type PropagationRep end
 """
     Algebraic()
 
-Propagation as the static phase rotation `R(2πL/λ)` — no dynamics, no states.
-Exact at DC; the right default for audio-band studies of short cavities where
-every analysis frequency is far below `c/L`.
+Propagation as instantaneous transfer, with no dynamics and no states. Exact at
+DC; the right default for audio-band studies of short
+cavities where every analysis frequency is far below `c/L`.
 """
 struct Algebraic <: PropagationRep end
 
@@ -64,12 +132,12 @@ Order-n all-pass rational approximation of the free-space delay `e^{-sτ}`,
 
     H₁(s) = (1 - sθ/2)/(1 + sθ/2),    θ = τ/order
 
-applied identically to both quadratures, with the static rotation `R(2πL/λ)`
-as a separate algebraic factor. `|H₁(iω)| ≡ 1` exactly, so passivity holds at
-every order; only phase is approximate (error `~(ωθ)³/12` per section, total
-`∝ order⁻²` at fixed `ωτ`). Cavity FSR physics becomes representable once
-`order ≳ ωτ` across the band of interest. Costs `2·order` states per
-`FreeSpace` instance.
+applied to the complex envelope.
+`|H₁(iω)| ≡ 1` exactly, so passivity holds at every order; only the phase is
+approximate (error `~(ωθ)³/12` per section, total `∝ order⁻²` at fixed `ωτ`).
+Cavity FSR physics becomes representable once `order ≳ ωτ` across the band of
+interest. Costs `4·order` real states per `FreeSpace` (two quadratures, two
+directions).
 """
 struct PadeDelay <: PropagationRep
     order::Int
@@ -79,197 +147,242 @@ struct PadeDelay <: PropagationRep
     end
 end
 
-# -----------------------------------------------------------------------------
-# Mirror
-# -----------------------------------------------------------------------------
-#
-# A two-port lossless dielectric mirror with real-valued amplitude reflectivity
-# `r` and amplitude transmissivity `t`, satisfying r² + t² = 1.
-#
-# The component has two physical sides ("front" / `f` and "back" / `b`), each
-# split into directed sub-ports `*_in` (field entering) and `*_out` (field
-# leaving). Scattering equations:
-#
-#     b_out.a = t * f_in.a + r * b_in.a
-#     f_out.a = -r * f_in.a + t * b_in.a
-#
-# i.e. the scattering matrix is S = [[t, r], [-r, t]], which satisfies
-# S†S = (t² + r²) I and is therefore unitary when t² + r² = 1.
+# Realify an all-pass cascade on complex input `u`, with states `x[1:n, 1:2]`:
+#     ẋⱼ = -(2/θ)(xⱼ - uⱼ₋₁),   uⱼ = 2xⱼ - uⱼ₋₁
+function allpass_cascade(u, x, n, θ)
+    eqs = Equation[]
+    for j in 1:n
+        xj = Complex(x[j, 1], x[j, 2])
+        ẋ = -(2 / θ) * (xj - u)
+        push!(eqs, D(x[j, 1]) ~ real(ẋ), D(x[j, 2]) ~ imag(ẋ))
+        u = 2xj - u
+    end
+    return eqs, u
+end
 
-@component function Mirror(; name, R = 0.99, T = nothing)
-    Tval = T === nothing ? 1 - R : T
-    meta = [OpticalComponent => (kind = :Mirror, r = sqrt(R), t = sqrt(Tval))]
-    # Parameters are named `mr`/`mt` (not `r`/`t`) to avoid shadowing the
-    # MTK time variable `t` inside this function scope.
+# -----------------------------------------------------------------------------
+# Scatterers
+# -----------------------------------------------------------------------------
+
+mirror_scattering(r, τ, ϕ) = [
+    (:p1, :p1) => r * cis(2ϕ), (:p1, :p2) => τ,
+    (:p2, :p2) => -r * cis(-2ϕ), (:p2, :p1) => τ,
+]
+
+"""
+    Mirror(; R = 0.99, T = 1 - R, ϕ = 0)
+
+Two-port mirror with power reflectivity `R` and transmissivity `T`, lossy when
+`R + T < 1`. `p1` is the reflective face: it reflects with `+√R e^{2iϕ}`, the
+`p2` face with `-√R e^{-2iϕ}`, and transmission is `√T` both ways. The tuning
+`ϕ = kΔx` [rad] is a microscopic displacement `Δx` toward `p2`.
+"""
+@component function Mirror(; name, R = 0.99, T = 1 - R, ϕ = 0.0)
+    meta = [OpticalComponent => Scatterer(mirror_scattering(sqrt(R), sqrt(T), ϕ))]
     pars = @parameters begin
-        mr = sqrt(R), [description = "Amplitude reflectivity"]
-        mt = sqrt(Tval), [description = "Amplitude transmissivity"]
+        R = R, [description = "Power reflectivity"]
+        T = T, [description = "Power transmissivity"]
+        ϕ = ϕ, [description = "Microscopic tuning [rad]"]
     end
+    ports = optical_ports(2)
+    eqs = scattering_equations(ports, mirror_scattering(sqrt(R), sqrt(T), ϕ))
+    return System(eqs, t, [], pars; name, systems = collect(ports), metadata = meta)
+end
 
-    systems = @named begin
-        f_in = OpticalIn()
-        f_out = OpticalOut()
-        b_in = OpticalIn()
-        b_out = OpticalOut()
+"""
+    MovableMirror(; R = 0.99, T = 1 - R, ϕ = 0, λ = 1064e-9, c = 299792458.0)
+
+A [`Mirror`](@ref) with a microscopic longitudinal position `x` (an
+`[input = true]` variable, positive toward the `p2` side) and the radiation
+pressure force `F` it feels (an `[output = true]` variable, positive toward the
+`p2` side). Bind `x` with an equation, e.g. to a mechanical model driven by
+`F`, or name it as a linearization input.
+
+The position adds to the tuning: the mirror scatters as a `Mirror` with tuning
+`ϕ + 2πx/λ`. The full nonlinear dependence is kept, so a length-control loop
+can sweep through fringes. With field amplitudes in `√W`, the force is
+
+    F = (|p1.i|² + |p1.o|² - |p2.i|² - |p2.o|²) / c.
+"""
+@component function MovableMirror(;
+        name, R = 0.99, T = 1 - R, ϕ = 0.0, λ = 1064.0e-9,
+        c = 299792458.0
+    )
+    meta = [OpticalComponent => Scatterer(mirror_scattering(sqrt(R), sqrt(T), ϕ))]
+    pars = @parameters begin
+        R = R, [description = "Power reflectivity"]
+        T = T, [description = "Power transmissivity"]
+        ϕ = ϕ, [description = "Microscopic tuning at x = 0 [rad]"]
+        λ = λ, [description = "Carrier wavelength [m]"]
+        c = c, [description = "Speed of light [m/s]"]
     end
+    # guesses, not defaults: x is set by whatever the caller binds it to and F
+    # is algebraically determined, so defaults would overdetermine
+    # initialization
+    vars = @variables begin
+        x(t), [input = true, description = "Position [m], positive toward p2"]
+        F(t), [output = true, description = "Radiation pressure force [N], positive toward p2"]
+    end
+    ports = optical_ports(2)
+    (; p1, p2) = ports
+    eqs = scattering_equations(ports, mirror_scattering(sqrt(R), sqrt(T), ϕ + (2π / λ) * x))
+    push!(
+        eqs, F ~ (
+            abs2(field(p1.i)) + abs2(field(p1.o)) -
+                abs2(field(p2.i)) - abs2(field(p2.o))
+        ) / c
+    )
+    return System(
+        eqs, t, vars, pars; name, systems = collect(ports), metadata = meta,
+        guesses = [x => 0.0, F => 0.0]
+    )
+end
 
-    equations = Equation[
-        b_out.a[1] ~ mt * f_in.a[1] + mr * b_in.a[1],
-        b_out.a[2] ~ mt * f_in.a[2] + mr * b_in.a[2],
-        f_out.a[1] ~ -mr * f_in.a[1] + mt * b_in.a[1],
-        f_out.a[2] ~ -mr * f_in.a[2] + mt * b_in.a[2],
+function beamsplitter_scattering(r, τ, ϕ)
+    rf, rb = r * cis(2ϕ), -r * cis(-2ϕ)
+    return [
+        (:p1, :p2) => rf, (:p2, :p1) => rf, (:p3, :p4) => rb, (:p4, :p3) => rb,
+        (:p1, :p3) => τ, (:p3, :p1) => τ, (:p2, :p4) => τ, (:p4, :p2) => τ,
     ]
+end
 
-    return System(equations, t, [], pars; name, systems, metadata = meta)
+"""
+    Beamsplitter(; R = 0.5, T = 1 - R, ϕ = 0)
+
+Four-port beamsplitter. `p1` and `p2` are on the reflective face and reflect
+into each other with `+√R e^{2iϕ}`; `p3` and `p4` are on the back face and
+reflect into each other with `-√R e^{-2iϕ}`. Transmission (`√T`) couples
+`p1 ↔ p3` and `p2 ↔ p4`.
+"""
+@component function Beamsplitter(; name, R = 0.5, T = 1 - R, ϕ = 0.0)
+    meta = [OpticalComponent => Scatterer(beamsplitter_scattering(sqrt(R), sqrt(T), ϕ))]
+    pars = @parameters begin
+        R = R, [description = "Power reflectivity"]
+        T = T, [description = "Power transmissivity"]
+        ϕ = ϕ, [description = "Microscopic tuning [rad]"]
+    end
+    ports = optical_ports(4)
+    eqs = scattering_equations(ports, beamsplitter_scattering(sqrt(R), sqrt(T), ϕ))
+    return System(eqs, t, [], pars; name, systems = collect(ports), metadata = meta)
 end
 
 # -----------------------------------------------------------------------------
 # FreeSpace
 # -----------------------------------------------------------------------------
-#
-# Free-space propagation over length L. Unidirectional — to wire two mirrors
-# face-to-face you instantiate one `FreeSpace` for the right-going field and a
-# second one for the left-going field.
-#
-# The physics is `out(t) = R(2πL/λ) · in(t - L/c)`: a static phase rotation of
-# the envelope times a pure delay. The rotation is always kept as an exact
-# algebraic factor; `rep` chooses how the delay is realized (see
-# `PropagationRep`). Because every all-pass section has unit magnitude at all
-# frequencies, energy conservation holds for every `rep` at every order.
 
-@component function FreeSpace(; name, L = 1.0, λ = 1064e-9, c = 299792458.0,
-        rep::PropagationRep = Algebraic())
-    meta = [OpticalComponent =>
-        (kind = :FreeSpace, L = float(L), λ = float(λ), c = float(c))]
+"""
+    FreeSpace(; L = 1.0, c = 299792458.0, rep = Algebraic())
 
+Free-space propagation over the macroscopic length `L` between ports `p1` and
+`p2`, in both directions: the envelope is delayed, `out(t) = in(t - L/c)`. The
+carrier phase is a whole number of wavelengths; set microscopic offsets with
+the tuning `ϕ` of a mirror. `rep` (a [`PropagationRep`](@ref)) chooses how the
+delay is realized.
+"""
+@component function FreeSpace(;
+        name, L = 1.0, c = 299792458.0, rep::PropagationRep = Algebraic()
+    )
+    meta = [OpticalComponent => Propagator(L / c)]
     pars = @parameters begin
         L = L, [description = "Propagation length [m]"]
-        λ = λ, [description = "Carrier wavelength [m]"]
         c = c, [description = "Speed of light [m/s]"]
     end
-
-    systems = @named begin
-        port_in = OpticalIn()
-        port_out = OpticalOut()
-    end
-
-    # Static envelope rotation by φ = k L = (2π/λ) L, applied ahead of the
-    # (rep-dependent) delay realization. u holds the rotated input field.
-    φ = 2π * L / λ
-    u = (cos(φ) * port_in.a[1] - sin(φ) * port_in.a[2],
-         sin(φ) * port_in.a[1] + cos(φ) * port_in.a[2])
+    (; p1, p2) = optical_ports(2)
+    u12, u21 = field(p1.i), field(p2.i)
 
     if rep isa Algebraic
-        equations = Equation[
-            port_out.a[1] ~ u[1],
-            port_out.a[2] ~ u[2],
-        ]
-        return System(equations, t, [], pars; name, systems, metadata = meta)
+        eqs = [emit(p2.o, u12); emit(p1.o, u21)]
+        return System(eqs, t, [], pars; name, systems = [p1, p2], metadata = meta)
     end
 
-    rep::PadeDelay
     n = rep.order
-    θ = L / (c * n)             # per-section delay
-    @variables x(t)[1:n, 1:2] [description = "All-pass section states"]
-
-    # Cascade of n first-order all-pass sections per quadrature:
-    #     ẋⱼ = -(2/θ)(xⱼ - uⱼ₋₁),   yⱼ = 2xⱼ - uⱼ₋₁
-    equations = Equation[]
-    for j in 1:n
-        push!(equations, D(x[j, 1]) ~ -(2 / θ) * (x[j, 1] - u[1]))
-        push!(equations, D(x[j, 2]) ~ -(2 / θ) * (x[j, 2] - u[2]))
-        u = (2x[j, 1] - u[1], 2x[j, 2] - u[2])
+    θ = L / (c * n)
+    @variables begin
+        x12(t)[1:n, 1:2], [description = "All-pass states, p1 → p2"]
+        x21(t)[1:n, 1:2], [description = "All-pass states, p2 → p1"]
     end
-    push!(equations, port_out.a[1] ~ u[1])
-    push!(equations, port_out.a[2] ~ u[2])
-
-    return System(equations, t, [x], pars; name, systems, metadata = meta,
-        guesses = [x => zeros(n, 2)])
+    eqs12, y12 = allpass_cascade(u12, x12, n, θ)
+    eqs21, y21 = allpass_cascade(u21, x21, n, θ)
+    eqs = [eqs12; eqs21; emit(p2.o, y12); emit(p1.o, y21)]
+    return System(
+        eqs, t, [x12, x21], pars; name, systems = [p1, p2], metadata = meta,
+        guesses = [x12 => zeros(n, 2), x21 => zeros(n, 2)]
+    )
 end
 
 # -----------------------------------------------------------------------------
-# Laser (constant-amplitude source)
+# Terminals: one-port sources and sinks
 # -----------------------------------------------------------------------------
-#
-# Emits a fixed complex envelope `(A_re, A_im)` from its single output port and
-# absorbs whatever comes back on its single input port. The laser does not
-# respond to back-action.
 
+"""
+    Laser(; A = 1.0, ϕ = 0.0)
+
+Emits the constant envelope `A e^{iϕ}` from `p1` and absorbs whatever arrives.
+"""
 @component function Laser(; name, A = 1.0, ϕ = 0.0)
-    meta = [OpticalComponent => (kind = :Laser,)]
     pars = @parameters begin
-        A = A, [description = "Output field amplitude"]
-        ϕ = ϕ, [description = "Output field phase [rad]"]
+        A = A, [description = "Field amplitude [√W]"]
+        ϕ = ϕ, [description = "Field phase [rad]"]
     end
-
-    systems = @named begin
-        port_out = OpticalOut()
-        port_in = OpticalIn()  # absorbs reflected light; no equation needed
-    end
-
-    equations = Equation[
-        port_out.a[1] ~ A * cos(ϕ),
-        port_out.a[2] ~ A * sin(ϕ),
-    ]
-
-    return System(equations, t, [], pars; name, systems, metadata = meta)
+    p1 = OpticalPort(; name = :p1)
+    return System(
+        emit(p1.o, A * cis(ϕ)), t, [], pars; name, systems = [p1],
+        metadata = [OpticalComponent => Terminal()]
+    )
 end
 
-# -----------------------------------------------------------------------------
-# LaserModulated (constant carrier + small-signal quadrature modulation inputs)
-# -----------------------------------------------------------------------------
-#
-# Same as `Laser`, but exposes small-signal perturbations of both carrier-frame
-# quadratures as variables marked `[input = true]`: `δA` in phase with the
-# carrier (amplitude modulation) and `δQ` in quadrature (phase modulation, to
-# first order). The emitted envelope is `(A + δA + i δQ) e^{iϕ}`. Defaulting to
-# zero, they do nothing at the DC operating point — but passed as inputs to
-# `linearize`, they span the full quadrature pair, so port-to-port transfer
-# functions come out as complete 2×2 blocks.
+"""
+    LaserModulated(; A = 1.0, ϕ = 0.0)
 
+A [`Laser`](@ref) whose envelope `(A + δA + i δQ) e^{iϕ}` carries small-signal
+modulation inputs: `δA` in phase with the carrier (amplitude modulation) and
+`δQ` in quadrature (phase modulation, to first order). Both are
+`[input = true]` variables: bind them with equations or name them as
+linearization inputs, where together they span the full quadrature pair.
+"""
 @component function LaserModulated(; name, A = 1.0, ϕ = 0.0)
-    meta = [OpticalComponent => (kind = :Laser,)]
     pars = @parameters begin
-        A = A, [description = "Carrier field amplitude"]
-        ϕ = ϕ, [description = "Carrier field phase [rad]"]
+        A = A, [description = "Carrier amplitude [√W]"]
+        ϕ = ϕ, [description = "Carrier phase [rad]"]
     end
-
-    @variables δA(t) = 0.0 [input = true,
-        description = "Small-signal amplitude-quadrature perturbation"]
-    @variables δQ(t) = 0.0 [input = true,
-        description = "Small-signal phase-quadrature perturbation"]
-
-    systems = @named begin
-        port_out = OpticalOut()
-        port_in = OpticalIn()  # absorbs reflected light
+    vars = @variables begin
+        δA(t) = 0.0, [input = true, description = "Amplitude-quadrature modulation"]
+        δQ(t) = 0.0, [input = true, description = "Phase-quadrature modulation"]
     end
-
-    equations = Equation[
-        port_out.a[1] ~ (A + δA) * cos(ϕ) - δQ * sin(ϕ),
-        port_out.a[2] ~ (A + δA) * sin(ϕ) + δQ * cos(ϕ),
-    ]
-
-    return System(equations, t, [δA, δQ], pars; name, systems, metadata = meta)
+    p1 = OpticalPort(; name = :p1)
+    return System(
+        emit(p1.o, (A + δA + im * δQ) * cis(ϕ)), t, vars, pars; name,
+        systems = [p1], metadata = [OpticalComponent => Terminal()]
+    )
 end
 
-# -----------------------------------------------------------------------------
-# Vacuum (zero-amplitude source / beam dump)
-# -----------------------------------------------------------------------------
-#
-# Emits zero field on its output port. Used to terminate an unused side of a
-# mirror so the network has no dangling directed connectors.
+"""
+    Vacuum()
 
+Emits zero field from `p1` and absorbs whatever arrives: terminates an unused
+port so the network has no dangling connectors.
+"""
 @component function Vacuum(; name)
-    meta = [OpticalComponent => (kind = :Vacuum,)]
-    systems = @named begin
-        port_out = OpticalOut()
-        port_in = OpticalIn()
-    end
+    p1 = OpticalPort(; name = :p1)
+    return System(
+        emit(p1.o, 0), t, [], []; name, systems = [p1],
+        metadata = [OpticalComponent => Terminal()]
+    )
+end
 
-    equations = Equation[
-        port_out.a[1] ~ 0,
-        port_out.a[2] ~ 0,
-    ]
+"""
+    Photodetector()
 
-    return System(equations, t, [], []; name, systems, metadata = meta)
+Perfect absorber on `p1` that reports the arriving power `P = |p1.i|²` as an
+`[output = true]` variable.
+"""
+@component function Photodetector(; name)
+    # a guess, not a default: P is algebraically determined by the field
+    @variables P(t) [output = true, description = "Detected power [W]"]
+    p1 = OpticalPort(; name = :p1)
+    eqs = [P ~ abs2(field(p1.i)); emit(p1.o, 0)]
+    return System(
+        eqs, t, [P], []; name, systems = [p1],
+        metadata = [OpticalComponent => Terminal()], guesses = [P => 0.0]
+    )
 end
