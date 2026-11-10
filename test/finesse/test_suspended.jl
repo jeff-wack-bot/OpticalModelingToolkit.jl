@@ -14,7 +14,7 @@ const SUS_LINE = "mirror m2 R=0.999 T=0.001 L=0 phi=0"
 "The shared model with the end mirror tuned by `phi2` [deg]."
 function sus_kat(; phi2 = 0.0)
     occursin(SUS_LINE, SUS_KAT) || error("models/suspended_fp.kat no longer has the m2 line")
-    replace(SUS_KAT, SUS_LINE => "mirror m2 R=0.999 T=0.001 L=0 phi=$phi2")
+    return replace(SUS_KAT, SUS_LINE => "mirror m2 R=0.999 T=0.001 L=0 phi=$phi2")
 end
 
 "Finesse's mechanical frequency response `m2.mech.z / m2.mech.F_z` at each frequency [Hz]."

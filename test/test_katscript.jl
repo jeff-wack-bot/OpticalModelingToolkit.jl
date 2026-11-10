@@ -12,7 +12,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ControlSystemsBase: ss, poles, dcgain
 using SciMLBase
 
-const kat_suspended = read(joinpath(@__DIR__, "..", "models", "suspended_fp.kat"), String)
+const kat_suspended = read(joinpath(pkgdir(OpticalModelingToolkit), "models", "suspended_fp.kat"), String)
 
 @testset "parse_kat" begin
     els = parse_kat(kat_suspended)

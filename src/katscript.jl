@@ -191,20 +191,22 @@ function build_kat(text::AbstractString; drive = nothing, rep::PropagationRep = 
     ω0 = 2π * p.params[:fz]
     k = M * ω0^2
     if drive === nothing
-        @variables z(t)=0.0 v(t)=0.0 F_z(t)=0.0 [input = true]
+        @variables z(t) = 0.0 v(t) = 0.0 F_z(t) = 0.0 [input = true]
     else
         A, f = drive
-        @variables z(t)=0.0 v(t)=0.0 F_z(t)=0.0
+        @variables z(t) = 0.0 v(t) = 0.0 F_z(t) = 0.0
         push!(eqs, F_z ~ A * sin(2π * f * t))
     end
-    append!(eqs, [
-        ## Finesse's displacement `z` moves the tuning with the opposite sign to
-        ## OMT's `x`. Found by the suspended-cavity cross-check at ±0.5 deg, where the
-        ## optical spring is nonzero; it has no effect at resonance.
-        mirror.x ~ -z
-        D(z) ~ v
-        M * D(v) ~ -k * (z - x_rest) - (M * ω0 / Q) * v + mirror.F + F_z
-    ])
+    append!(
+        eqs, [
+            ## Finesse's displacement `z` moves the tuning with the opposite sign to
+            ## OMT's `x`. Found by the suspended-cavity cross-check at ±0.5 deg, where the
+            ## optical spring is nonzero; it has no effect at resonance.
+            mirror.x ~ -z
+            D(z) ~ v
+            M * D(v) ~ -k * (z - x_rest) - (M * ω0 / Q) * v + mirror.F + F_z
+        ]
+    )
     @named plant = System(eqs, t; systems)
     return plant, (; z, v, F_z, comps)
 end

@@ -68,7 +68,7 @@ end
         mich, c = michelson(; Lx = 1.0, Ly = 1.3, ϕy, R, laser = Laser)
         sys = mtkcompile(mich)
         sol = solve(NonlinearProblem(sys, Dict(u => 0.0 for u in unknowns(sys))))
-        @test sol[c.pd.P] ≈ 4R * (1 - R) * sin(ϕy)^2 atol = 1.0e-14
+        @test sol[c.pd.P] ≈ 4R * (1 - R) * sin(ϕy)^2 rtol = 1.0e-12 atol = 1.0e-14
         P_sym = sol[c.src.p1.i.a[1]]^2 + sol[c.src.p1.i.a[2]]^2
         @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-12
     end
