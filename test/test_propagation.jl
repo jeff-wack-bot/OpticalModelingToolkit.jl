@@ -22,7 +22,7 @@ using ModelingToolkit: t_nounits as t
 using ControlSystemsBase: ss, freqresp
 
 const c_v = 299792458.0
-const λ_v = 1064e-9
+const λ_v = 1064.0e-9
 
 # The complex field transfer function from the modulation quadrature pair
 # `(δA, δQ)` to an output quadrature pair: with the carrier at ``\phi = 0`` a
@@ -65,19 +65,23 @@ ap_exact(ω, θ, n) = ((1 - im * ω * θ / 2) / (1 + im * ω * θ / 2))^n
         @named line = System(eqs, t; systems = [laser, fs, vac])
 
         ωs = collect(ωτ_grid) ./ τ_v
-        h = field_tf(line, [laser.δA, laser.δQ],
-            [fs.p2.o.a[1], fs.p2.o.a[2]], ωs)
+        h = field_tf(
+            line, [laser.δA, laser.δQ],
+            [fs.p2.o.a[1], fs.p2.o.a[2]], ωs
+        )
 
         for (k, ωτ) in enumerate(ωτ_grid)
             ## passivity: exactly all-pass at every order and frequency
-            @test abs(h[k]) ≈ 1 atol = 1e-12
+            @test abs(h[k]) ≈ 1 atol = 1.0e-12
             ## the state-space realization is exactly the section cascade
-            @test h[k] ≈ cis(φ_v) * ap_exact(ωτ / τ_v, τ_v / n, n) rtol = 1e-9
+            @test h[k] ≈ cis(φ_v) * ap_exact(ωτ / τ_v, τ_v / n, n) rtol = 1.0e-9
         end
 
         ω_ref = 0.5 / τ_v
-        h_ref = field_tf(line, [laser.δA, laser.δQ],
-            [fs.p2.o.a[1], fs.p2.o.a[2]], [ω_ref])[1]
+        h_ref = field_tf(
+            line, [laser.δA, laser.δQ],
+            [fs.p2.o.a[1], fs.p2.o.a[2]], [ω_ref]
+        )[1]
         phase_err[n] = abs(angle(h_ref * conj(cis(φ_v - ω_ref * τ_v))))
     end
 
@@ -146,8 +150,10 @@ const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
     orders = (1, 2, 4, 8, 16)
     for n in orders
         fp, laser, m1, m2 = fp_model(L_res, PadeDelay(n))
-        h = field_tf(fp, [laser.δA, laser.δQ],
-            [m2.p2.o.a[1], m2.p2.o.a[2]], ωs)
+        h = field_tf(
+            fp, [laser.δA, laser.δQ],
+            [m2.p2.o.a[1], m2.p2.o.a[2]], ωs
+        )
         push!(maxerr, maximum(abs.(h .- H_ex.(ωs)) ./ abs.(H_ex.(ωs))))
     end
     ## the approximation order is a convergence knob: error decreases
@@ -158,14 +164,18 @@ const L_res = (2 * round(Int, 0.1 / (λ_v / 4)) + 1) * λ_v / 4
     ## FSR physics: the first free-spectral-range peak sits at Ω = π/τ = 2π·c/2L
     fp, laser, m1, m2 = fp_model(L_res, PadeDelay(16))
     ω_scan = collect(range(0.9 * fsr, 1.1 * fsr; length = 401))
-    h_scan = field_tf(fp, [laser.δA, laser.δQ],
-        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_scan)
+    h_scan = field_tf(
+        fp, [laser.δA, laser.δQ],
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_scan
+    )
     ω_peak = ω_scan[argmax(abs.(h_scan))]
     @test abs(ω_peak - fsr) / fsr < 0.01
 
-    println("✓ FP convergence: max rel err by order ",
+    println(
+        "✓ FP convergence: max rel err by order ",
         Dict(zip(orders, round.(maxerr, sigdigits = 2))),
-        "  FSR peak off by ", round(100 * abs(ω_peak - fsr) / fsr, sigdigits = 2), "%")
+        "  FSR peak off by ", round(100 * abs(ω_peak - fsr) / fsr, sigdigits = 2), "%"
+    )
 end
 
 # ## Representation invariance in the audio band
@@ -181,26 +191,32 @@ end
     ω_audio = 2π .* (10.0 .^ range(1, 4; length = 13))   # 10 Hz – 10 kHz
 
     fp_alg, laser, m1, m2 = fp_model(L_res, Algebraic())
-    h_alg = field_tf(fp_alg, [laser.δA, laser.δQ],
-        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio)
+    h_alg = field_tf(
+        fp_alg, [laser.δA, laser.δQ],
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio
+    )
 
     fp_p1, laser, m1, m2 = fp_model(L_res, PadeDelay(1))
-    h_p1 = field_tf(fp_p1, [laser.δA, laser.δQ],
-        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio)
+    h_p1 = field_tf(
+        fp_p1, [laser.δA, laser.δQ],
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio
+    )
 
     fp_p4, laser, m1, m2 = fp_model(L_res, PadeDelay(4))
-    h_p4 = field_tf(fp_p4, [laser.δA, laser.δQ],
-        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio)
+    h_p4 = field_tf(
+        fp_p4, [laser.δA, laser.δQ],
+        [m2.p2.o.a[1], m2.p2.o.a[2]], ω_audio
+    )
 
     for (k, ω) in enumerate(ω_audio)
         ## PadeDelay is audio-band-exact at any order; the tolerance is the
         ## finesse-amplified roundoff floor of the closed loop, not a
         ## representation error
-        @test h_p1[k] ≈ H_ex(ω) rtol = 1e-6
-        @test h_p4[k] ≈ H_ex(ω) rtol = 1e-6
+        @test h_p1[k] ≈ H_ex(ω) rtol = 1.0e-6
+        @test h_p4[k] ≈ H_ex(ω) rtol = 1.0e-6
         ## the adiabatic representation agrees to the cavity-pole correction
         @test h_alg[k] ≈ H_ex(ω) rtol = 0.02
     end
     ## ... and tightly at the bottom of the band
-    @test h_alg[1] ≈ H_ex(ω_audio[1]) rtol = 1e-4
+    @test h_alg[1] ≈ H_ex(ω_audio[1]) rtol = 1.0e-4
 end

@@ -28,8 +28,8 @@ using ControlSystemsBase: ss, freqresp, poles, dcgain
     r1_v = sqrt(R1)
     r2_v = sqrt(R2)
     t1_v = sqrt(1 - R1)
-    λ_v  = 1064e-9
-    c_v  = 299792458.0
+    λ_v = 1064.0e-9
+    c_v = 299792458.0
     ## Macroscopic length ≈ 0.1 m, exactly on resonance with our scattering
     ## convention: exp(2 i k L) = -1 ⇒ L = (2n+1) λ/4.
     n_quarter = round(Int, 0.1 / (λ_v / 4))
@@ -38,10 +38,10 @@ using ControlSystemsBase: ss, freqresp, poles, dcgain
 
     ## Model: PadeDelay(1), one all-pass section per direction, 4 states
     @named laser = LaserModulated(A = 1.0, ϕ = 0.0)
-    @named m1    = Mirror(R = R1)
+    @named m1 = Mirror(R = R1)
     @named space = FreeSpace(L = L_v, λ = λ_v, rep = PadeDelay(1))
-    @named m2    = Mirror(R = R2)
-    @named vac   = Vacuum()
+    @named m2 = Mirror(R = R2)
+    @named vac = Vacuum()
     eqs = [
         link(laser.p1, m1.p1)
         link(m1.p2, space.p1)
@@ -50,7 +50,7 @@ using ControlSystemsBase: ss, freqresp, poles, dcgain
     ]
     @named fp = System(eqs, t; systems = [laser, m1, space, m2, vac])
 
-    inputs  = [laser.δA, laser.δQ]
+    inputs = [laser.δA, laser.δQ]
     outputs = [m1.p2.o.a[1], m1.p2.o.a[2]]
 
     ## Ecosystem path: numeric linearization → StateSpace → ControlSystemsBase
@@ -76,16 +76,18 @@ using ControlSystemsBase: ss, freqresp, poles, dcgain
         t1_v / (1 + r1_v * r2_v * exp2ikL * ap^2)
     end
     for (k, ω) in enumerate(ωs)
-        @test Hnum[k] ≈ Hana(ω) rtol = 1e-8 atol = 1e-12
+        @test Hnum[k] ≈ Hana(ω) rtol = 1.0e-8 atol = 1.0e-12
     end
 
     ## DC gain: the algebraic intracavity buildup t1/(1 - r1 r2), identical in
     ## every representation
     dc = dcgain(sys)
-    @test dc[1, 1] ≈ t1_v / (1 - r1_v * r2_v) rtol = 1e-10
-    @test Hnum[1] ≈ Hana(ωs[1]) rtol = 1e-10
+    @test dc[1, 1] ≈ t1_v / (1 - r1_v * r2_v) rtol = 1.0e-10
+    @test Hnum[1] ≈ Hana(ωs[1]) rtol = 1.0e-10
 
-    println("✓ Fabry-Perot AC: ecosystem path matches the analytic reference over ",
+    println(
+        "✓ Fabry-Perot AC: ecosystem path matches the analytic reference over ",
         length(ωs), " points; |H(0)| = ",
-        round(abs(dc[1, 1]), digits = 3))
+        round(abs(dc[1, 1]), digits = 3)
+    )
 end
