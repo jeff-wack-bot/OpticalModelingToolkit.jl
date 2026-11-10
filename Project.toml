@@ -29,4 +29,4 @@ OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ControlSystemsBase", "NonlinearSolve", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "SciMLBase", "Test"]
+test = ["ControlSystemsBase", "NonlinearSolve", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "Test"]
