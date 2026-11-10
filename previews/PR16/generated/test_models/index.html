@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="referrer" content="no-referrer"/><title>Shared models: one file, two simulators · OpticalModelingToolkit.jl</title><meta name="title" content="Shared models: one file, two simulators · OpticalModelingToolkit.jl"/><meta property="og:title" content="Shared models: one file, two simulators · OpticalModelingToolkit.jl"/><meta property="twitter:title" content="Shared models: one file, two simulators · OpticalModelingToolkit.jl"/><meta name="description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="twitter:description" content="Documentation for OpticalModelingToolkit.jl."/><meta property="og:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_models/"/><meta property="twitter:url" content="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_models/"/><link rel="canonical" href="https://jeff-wack-bot.github.io/OpticalModelingToolkit.jl/generated/test_models/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OpticalModelingToolkit.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../design/">Design</a></li><li><a class="tocitem" href="../../solvers/">Solver strategy</a></li><li><a class="tocitem" href="../../models/">Shared models with Finesse.jl</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../test_fabry_perot_ac/">Fabry-Perot AC transfer function</a></li><li><a class="tocitem" href="../test_fabry_perot_dc/">Fabry-Perot DC operating point</a></li><li><a class="tocitem" href="../test_katscript/">KatScript models</a></li><li><a class="tocitem" href="../test_michelson/">Michelson interferometer</a></li><li class="is-active"><a class="tocitem" href>Shared models: one file, two simulators</a><ul class="internal"><li><a class="tocitem" href="#The-suspended-cavity:-an-optical-spring"><span>The suspended cavity: an optical spring</span></a></li><li><a class="tocitem" href="#The-locked-cavity:-optics,-suspension-and-servo"><span>The locked cavity: optics, suspension and servo</span></a></li><li><a class="tocitem" href="#Time-domain-against-frequency-domain"><span>Time domain against frequency domain</span></a></li><li><a class="tocitem" href="#What-only-the-time-domain-can-show"><span>What only the time domain can show</span></a></li></ul></li><li><a class="tocitem" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition</a></li><li><a class="tocitem" href="../test_propagation/">Propagation representations</a></li><li><a class="tocitem" href="../test_scattering/">The transcendental scattering bridge</a></li></ul></li><li><a class="tocitem" href="../../projects/">Simulation projects</a></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Shared models: one file, two simulators</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Shared models: one file, two simulators</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/jeff-wack-bot/OpticalModelingToolkit.jl/blob/main/test/test_models.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Shared-models:-one-file,-two-simulators"><a class="docs-heading-anchor" href="#Shared-models:-one-file,-two-simulators">Shared models: one file, two simulators</a><a id="Shared-models:-one-file,-two-simulators-1"></a><a class="docs-heading-anchor-permalink" href="#Shared-models:-one-file,-two-simulators" title="Permalink"></a></h1><p>Each file in <code>models/</code> is a KatScript model that is the single source of truth for both codes. Finesse.jl solves its frequency response. OMT builds the same network as a time-domain DAE with <a href="../../api/#OpticalModelingToolkit.build_kat-Tuple{AbstractString}"><code>build_kat</code></a>: optics, suspension and servo in one ModelingToolkit model.</p><p>This page checks the two against each other without Finesse installed. Finesse&#39;s responses are stored in <code>models/reference/</code>; <code>test/finesse/reference.jl</code> writes them, and the cross-check suite in <code>test/finesse/</code> fails if they go stale. Three comparisons:</p><ol><li>OMT&#39;s linearized frequency response against Finesse&#39;s;</li><li>OMT&#39;s time-domain response to a sinusoidal force, demodulated, against the same Finesse numbers;</li><li>what only the time domain can show: a mirror running away without its servo, and pulled back in with it.</li></ol><pre><code class="language-julia hljs">using Test
+using OpticalModelingToolkit
+using ModelingToolkit
+using ControlSystemsBase: ss, poles
+using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqNonlinearSolve
+using SciMLBase
+
+const MODELS = joinpath(pkgdir(OpticalModelingToolkit), &quot;models&quot;)
+kat(model) = read(joinpath(MODELS, &quot;$model.kat&quot;), String)
+
+&quot;Finesse.jl&#39;s stored responses of `model`: frequencies [Hz], and one complex vector per response.&quot;
+function finesse_reference(model)
+    path = joinpath(MODELS, &quot;reference&quot;, &quot;$model.txt&quot;)
+    rows = [parse.(Float64, split(l)) for l in eachline(path) if !startswith(l, &#39;#&#39;)]
+    n = (length(rows[1]) - 1) ÷ 2
+    return [r[1] for r in rows], [[complex(r[2k], r[2k + 1]) for r in rows] for k in 1:n]
+end
+
+&quot;OMT&#39;s frequency response from the force on the suspended mirror to each of `outs(h)`.&quot;
+function omt_response(src, fs, outs; rep = PadeDelay(1))
+    plant, h = build_kat(src; rep)
+    o = outs(h)
+    mats, _ = linearize_proper(plant, [h.F_z], o; op = Dict(h.z =&gt; 0.0, h.v =&gt; 0.0))
+    G = frequency_response(mats, fs)
+    return [G[k, 1, :] for k in eachindex(o)]
+end
+
+relerr(a, b) = abs.(a .- b) ./ abs.(b)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">relerr (generic function with 1 method)</code></pre><h2 id="The-suspended-cavity:-an-optical-spring"><a class="docs-heading-anchor" href="#The-suspended-cavity:-an-optical-spring">The suspended cavity: an optical spring</a><a id="The-suspended-cavity:-an-optical-spring-1"></a><a class="docs-heading-anchor-permalink" href="#The-suspended-cavity:-an-optical-spring" title="Permalink"></a></h2><p><code>models/suspended_fp.kat</code> is a cavity whose end mirror hangs on a 20 Hz pendulum, tuned half a degree past resonance. There the radiation pressure rises as the mirror moves in, so the light is a spring, and 50 W makes it much stiffer than the suspension.</p><p>The spring&#39;s damping comes from the cavity&#39;s storage time, so a delay representation is needed to get it right. <code>PadeDelay(1)</code> matches Finesse&#39;s exact delays; the adiabatic <code>Algebraic</code> misses the damping, by up to <span>$4\times10^{-5}$</span> near the resonance.</p><p>The responses are evaluated with <a href="../../api/#OpticalModelingToolkit.frequency_response-Tuple{Any, Any}"><code>frequency_response</code></a>, in extended precision: with delay states the model is so stiff that a Float64 evaluation loses up to ten digits.</p><pre><code class="language-julia hljs">fs, (fin_sus,) = finesse_reference(&quot;suspended_fp&quot;)
+omt_sus = only(omt_response(kat(&quot;suspended_fp&quot;), fs, h -&gt; [h.z]))
+alg_sus = only(omt_response(kat(&quot;suspended_fp&quot;), fs, h -&gt; [h.z]; rep = Algebraic()))
+@test maximum(relerr(omt_sus, fin_sus)) &lt; 1.0e-9
+@test maximum(relerr(alg_sus, fin_sus)) &gt; 20 * maximum(relerr(omt_sus, fin_sus))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Test Passed</span></span></code></pre><p>The resonance, which the bare suspension has at 20 Hz:</p><pre><code class="language-julia hljs">f_peak = fs[argmax(abs.(fin_sus))]
+@test 50 &lt; f_peak &lt; 70
+f_peak</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">63.09573444801933</code></pre><p>Every fifth frequency: Finesse&#39;s <span>$|z/F|$</span> [m/N], and the relative error of OMT with <code>PadeDelay(1)</code> and with <code>Algebraic</code>.</p><pre><code class="language-julia hljs">[fs abs.(fin_sus) relerr(omt_sus, fin_sus) relerr(alg_sus, fin_sus)][1:5:end, :]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7×4 Matrix{Float64}:
+    1.0      7.20796e-5  1.5685e-12   1.22523e-7
+    3.16228  7.2262e-5   1.57012e-12  3.88433e-7
+   10.0      7.41376e-5  1.61375e-12  1.26021e-6
+   31.6228   9.99224e-5  2.17979e-12  5.37116e-6
+  100.0      3.86047e-5  8.47248e-13  6.56215e-6
+  316.228    2.62391e-6  6.10123e-14  1.41044e-6
+ 1000.0      2.54184e-7  8.4554e-15   4.32069e-7</code></pre><h2 id="The-locked-cavity:-optics,-suspension-and-servo"><a class="docs-heading-anchor" href="#The-locked-cavity:-optics,-suspension-and-servo">The locked cavity: optics, suspension and servo</a><a id="The-locked-cavity:-optics,-suspension-and-servo-1"></a><a class="docs-heading-anchor-permalink" href="#The-locked-cavity:-optics,-suspension-and-servo" title="Permalink"></a></h2><p><code>models/locked_cavity.kat</code> is tuned to the other side of resonance, where the optical spring is negative. Without feedback the mirror is unstable. A readout of the transmitted power and a lead filter push it back, with a unity-gain frequency near 100 Hz.</p><p>Open the loop by deleting the actuator line, and the linearized plant has a pole in the right half-plane:</p><pre><code class="language-julia hljs">const ACT = &quot;wire act servo.p2.o m2.mech.F_z&quot;
+open_loop = replace(kat(&quot;locked_cavity&quot;), ACT =&gt; &quot;&quot;)
+ol, ho = build_kat(open_loop; rep = PadeDelay(1))
+olmats, _ = linearize_proper(ol, [ho.F_z], [ho.z]; op = Dict(ho.z =&gt; 0.0, ho.v =&gt; 0.0))
+growth = maximum(real, poles(ss(olmats...)))
+@test growth &gt; 10
+growth</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">61.61438402521914</code></pre><p>With the loop closed, the response from a force on the mirror to its displacement and to the transmitted power matches Finesse&#39;s:</p><pre><code class="language-julia hljs">fs, (fin_z, fin_P) = finesse_reference(&quot;locked_cavity&quot;)
+omt_z, omt_P = omt_response(kat(&quot;locked_cavity&quot;), fs, h -&gt; [h.z, h.readouts[:trans]])
+@test maximum(relerr(omt_z, fin_z)) &lt; 1.0e-9
+@test maximum(relerr(omt_P, fin_P)) &lt; 1.0e-9
+[fs abs.(fin_z) relerr(omt_z, fin_z) abs.(fin_P) relerr(omt_P, fin_P)][1:5:end, :]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7×5 Matrix{Float64}:
+    1.0      9.21363e-5  1.11677e-11  32431.7     1.04745e-12
+    3.16228  9.18041e-5  1.11914e-11  32314.8     1.08031e-12
+   10.0      8.86296e-5  1.12789e-11  31197.4     1.40546e-12
+   31.6228   6.66803e-5  1.15351e-11  23471.3     3.52528e-12
+  100.0      2.07958e-5  8.46357e-12   7320.05    8.57408e-12
+  316.228    2.70327e-6  3.2223e-12     951.542   1.08969e-11
+ 1000.0      2.66245e-7  7.81496e-13     93.7176  1.12865e-11</code></pre><h2 id="Time-domain-against-frequency-domain"><a class="docs-heading-anchor" href="#Time-domain-against-frequency-domain">Time domain against frequency domain</a><a id="Time-domain-against-frequency-domain-1"></a><a class="docs-heading-anchor-permalink" href="#Time-domain-against-frequency-domain" title="Permalink"></a></h2><p>Now the same file as a time-domain simulation. The force on the mirror is <span>$A\sin(2\pi f t)$</span>, with the amplitude and frequency as parameters, so one compiled system serves every drive. The simulation starts from the steady state with the drive off (<a href="../../api/#OpticalModelingToolkit.steady_state-Tuple{SciMLBase.ODEProblem}"><code>steady_state</code></a>), so the cavity is already full and the loop already locked.</p><pre><code class="language-julia hljs">src = kat(&quot;locked_cavity&quot;)
+dp, dh = build_kat(src; drive = (0.0, 1.0), rep = PadeDelay(1))
+sys = mtkcompile(dp)
+settled = steady_state(ODEProblem(sys, [dh.z =&gt; 0.0, dh.v =&gt; 0.0], (0.0, 0.3)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr38_2" style="color:#56b6c2">ODEProblem</span> with uType <span class="sgr38_2" style="color:#56b6c2">Vector{Float64}</span> and tType <span class="sgr38_2" style="color:#56b6c2">Float64</span>. In-place: <span class="sgr38_2" style="color:#56b6c2">true</span>
+Initialization status: <span class="sgr38_2" style="color:#56b6c2">UNDERDETERMINED</span>
+Non-trivial mass matrix: <span class="sgr38_2" style="color:#56b6c2">true</span>
+timespan: (0.0, 0.3)
+u0: 31-element Vector{Float64}:
+  0.0
+  0.0
+  0.0
+  1.0
+  3.3684975460364865e-24
+  7.045173138893673e-35
+  8.656664585016817e-21
+  9.094630344922088
+  9.044446211065717
+  9.049042938326123
+  ⋮
+  9.049042938326123
+  9.044446211065717
+  9.094630344922088
+ -0.0905428160000483
+ -0.0905428160000483
+  0.28615586329773124
+  0.9094630344922088
+  0.9094630344922088
+  0.2877391340491101</code></pre><p>After the transient (the slowest closed-loop pole decays at about 250/s), the displacement is <span>$z = A\,\mathrm{Im}(H e^{i\omega t})$</span>. Demodulating over whole periods gives back <span>$H$</span>:</p><pre><code class="language-julia hljs">function demodulate(sol, x, f, T, n)
+    ts = range(T - n / f, T; length = 400n + 1)
+    w = sol.(ts; idxs = x) .* cis.(-2π * f .* ts)
+    integral = step(ts) * (sum(w) - (w[1] + w[end]) / 2)
+    return 2im * integral / (n / f)
+end
+
+A = 1.0e-8                                           # [N]; z stays below 1e-12 m, well inside the linear range
+idx = [11, 16, 21]                                   # 10, 31.6 and 100 Hz
+H_td = map(fs[idx]) do f
+    prob = remake(settled; p = [dh.drive.drive_A =&gt; A, dh.drive.drive_f =&gt; f])
+    sol = solve(prob, Rodas5P(); reltol = 1.0e-10, abstol = 1.0e-18, initializealg = BrownFullBasicInit())
+    @test SciMLBase.successful_retcode(sol)
+    demodulate(sol, dh.z, f, 0.3, max(1, floor(Int, 0.15f))) / A
+end
+@test maximum(relerr(H_td, fin_z[idx])) &lt; 1.0e-5</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Test Passed</span></span></code></pre><p>The frequency, Finesse&#39;s <span>$|H|$</span> and phase [deg], and the same from the time-domain simulation:</p><pre><code class="language-julia hljs">[fs[idx] abs.(fin_z[idx]) rad2deg.(angle.(fin_z[idx])) abs.(H_td) rad2deg.(angle.(H_td))]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3×5 Matrix{Float64}:
+  10.0     8.86296e-5   -21.5816  8.86297e-5   -21.5816
+  31.6228  6.66803e-5   -60.9733  6.66803e-5   -60.9733
+ 100.0     2.07958e-5  -121.197   2.07958e-5  -121.197</code></pre><h2 id="What-only-the-time-domain-can-show"><a class="docs-heading-anchor" href="#What-only-the-time-domain-can-show">What only the time domain can show</a><a id="What-only-the-time-domain-can-show-1"></a><a class="docs-heading-anchor-permalink" href="#What-only-the-time-domain-can-show" title="Permalink"></a></h2><p>Finesse linearizes about the operating point, and so answers questions about small motions around a working lock. Everything else is a time-domain question. Here are two: the open-loop mirror nudged by 0.1 pm runs away, and the locked mirror, started a fifth of a linewidth off, is pulled back.</p><pre><code class="language-julia hljs">linewidth = 1064.0e-9 / (4π) * (1 - sqrt(0.99 * 0.999)) / (0.99 * 0.999)^(1 / 4)
+
+function nudge(src, z0; T)
+    p, h = build_kat(src; drive = (0.0, 1.0), rep = PadeDelay(1))
+    s = mtkcompile(p)
+    prob = steady_state(ODEProblem(s, [h.z =&gt; 0.0, h.v =&gt; 0.0], (0.0, T)))
+    prob = remake(prob; u0 = [h.z =&gt; z0])
+    sol = solve(prob, Rodas5P(); reltol = 1.0e-9, abstol = 1.0e-20, initializealg = BrownFullBasicInit())
+    return sol, h
+end
+
+# open loop: the anti-spring wins
+sol_ol, h_ol = nudge(open_loop, 1.0e-13; T = 0.1)
+@test SciMLBase.successful_retcode(sol_ol)
+@test abs(sol_ol[h_ol.z][end]) &gt; 100 * 1.0e-13
+
+# closed loop: the servo pulls the mirror in
+z0 = 0.2 * linewidth
+sol_cl, h_cl = nudge(src, z0; T = 0.1)
+@test SciMLBase.successful_retcode(sol_cl)
+@test abs(sol_cl[h_cl.z][end]) &lt; 1.0e-3 * z0</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Test Passed</span></span></code></pre><p>Where each mirror ends up after 0.1 s, as a fraction of where it started:</p><pre><code class="language-julia hljs">(open_loop = sol_ol[h_ol.z][end] / 1.0e-13, locked = sol_cl[h_cl.z][end] / z0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(open_loop = 334.3069104994004, locked = -1.3624876215114176e-11)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../test_michelson/">« Michelson interferometer</a><a class="docs-footer-nextpage" href="../test_optomechanics/">Optomechanics: optical spring and lock acquisition »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.20.0 on <span class="colophon-date" title="Tuesday 10 November 2026 21:29">Tuesday 10 November 2026</span>. Using Julia version 1.13.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
