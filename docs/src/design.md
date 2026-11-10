@@ -64,6 +64,11 @@ sub-wavelength bookkeeping of `L`. Numerically, no phase is ever computed from
 a ~10⁶ rad argument whose roundoff the cavity finesse would amplify. A
 `MovableMirror`'s position `x` simply adds `kx` to its tuning.
 
+One difference from Finesse remains: a tuning's phase is the same for every
+sideband. Finesse treats a tuning as a displacement and scales its phase by
+``1 + f/f_0`` at sideband offset ``f``. That is ``\phi f/f_0``, below
+``10^{-7}`` rad for ``f`` under 1 GHz, before the cavity finesse multiplies it.
+
 ## 6. The field network is solved forward, never inverted
 
 Incoming fields are marked `irreducible`, so they always stay unknowns of the
@@ -130,3 +135,15 @@ script: `runtests.jl` runs it, and `docs/make.jl` renders it as an *Examples*
 page. Each test states the physics it checks against, analytically where
 possible. Inside a code block, write comments with `##`. A line starting with
 `# ` becomes prose and splits the block.
+
+`test/finesse/` is a second suite, in its own environment, that checks the
+package against [Finesse.jl](https://git.mccullerlab.com/software/finesse.jl),
+a pure-Julia port of FINESSE 3. It builds the same networks in both codes and
+compares DC fields at every port, exact sideband transfer functions,
+the linearized laser-to-photodetector response, and the optical spring.
+Finesse.jl is unregistered, so this suite is not part of `Pkg.test()`:
+
+```
+julia --project=test/finesse -e 'using Pkg; Pkg.instantiate()'
+julia --project=test/finesse test/finesse/runtests.jl
+```
