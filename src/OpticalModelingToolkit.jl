@@ -25,4 +25,7 @@ export linearize_proper
 include("scattering.jl")
 export to_scattering
 
+include("katscript.jl")
+export parse_kat, build_kat
+
 end # module OpticalModelingToolkit

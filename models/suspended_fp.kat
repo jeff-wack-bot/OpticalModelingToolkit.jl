@@ -1,0 +1,15 @@
+# A suspended Fabry-Perot cavity: the end mirror hangs on a pendulum.
+#
+# This file is the single source of truth for the model. Finesse.jl parses all of
+# it and solves the frequency response. OpticalModelingToolkit.jl reads the
+# subset it supports (see src/katscript.jl) and simulates the same network in
+# the time domain.
+#
+#     l1 ── m1 ══ s0 ══ ══ sc ══ m2 ── (pendulum sus on m2.mech)
+
+laser l1 P=50
+mirror m1 R=0.99 T=0.01 L=0
+mirror m2 R=0.999 T=0.001 L=0 phi=0
+space s0 l1.p1 m1.p1 L=1
+space sc m1.p2 m2.p2 L=0.1
+pendulum sus m2.mech mass=0.1 fz=20 Qz=2

@@ -26,7 +26,7 @@ using ControlSystemsBase: ss, dcgain, freqresp
 include("common.jl")
 
 @testset "OpticalModelingToolkit vs Finesse.jl" begin
-    for f in ("test_conventions.jl", "test_dc_fields.jl", "test_sidebands.jl", "test_signals.jl")
+    for f in ("test_conventions.jl", "test_dc_fields.jl", "test_sidebands.jl", "test_signals.jl", "test_suspended.jl")
         @testset "$f" begin
             include(f)
         end
