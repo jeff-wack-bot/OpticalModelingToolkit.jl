@@ -11,7 +11,7 @@ using Symbolics
 using Symbolics: SymbolicUtils
 
 include("ports.jl")
-export OpticalIn, OpticalOut, OpticalPort, link
+export OpticalIn, OpticalOut, OpticalPort, link, expose
 
 include("components.jl")
 export Mirror, MovableMirror, Beamsplitter, FreeSpace

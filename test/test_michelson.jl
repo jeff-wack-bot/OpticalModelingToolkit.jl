@@ -16,11 +16,12 @@
 #
 # Light entering `p1` reflects out of `p2` (the y arm) and transmits out of `p3`
 # (the x arm). Back at the beamsplitter, the y return transmits to `p4` and the x
-# return reflects there with ``-r``, so the antisymmetric field is
+# return reflects there with ``-r``. With end-mirror tunings ``\phi_{x,y}`` the
+# antisymmetric field is
 #
 # ```math
-# E_\mathrm{AS} = r t A \left(e^{2ikL_y} - e^{2ikL_x}\right),
-# \qquad P_\mathrm{AS} = 4 R T A^2 \sin^2 k(L_y - L_x).
+# E_\mathrm{AS} = r t A \left(e^{2i\phi_y} - e^{2i\phi_x}\right),
+# \qquad P_\mathrm{AS} = 4 R T A^2 \sin^2(\phi_y - \phi_x).
 # ```
 
 using Test
@@ -30,16 +31,15 @@ using ModelingToolkit: t_nounits as t
 using NonlinearSolve
 using LinearAlgebra
 
-const λ_mi = 1064.0e-9
 const c_mi = 299792458.0
 
-function michelson(; Lx, Ly, R = 0.5, laser = LaserModulated)
+function michelson(; Lx, Ly, ϕx = 0.0, ϕy = 0.0, R = 0.5, laser = LaserModulated)
     @named src = laser()
     @named bs = Beamsplitter(; R)
-    @named sx = FreeSpace(L = Lx, λ = λ_mi)
-    @named sy = FreeSpace(L = Ly, λ = λ_mi)
-    @named ex = Mirror(R = 1.0)
-    @named ey = Mirror(R = 1.0)
+    @named sx = FreeSpace(L = Lx)
+    @named sy = FreeSpace(L = Ly)
+    @named ex = Mirror(R = 1.0, ϕ = ϕx)
+    @named ey = Mirror(R = 1.0, ϕ = ϕy)
     @named vx = Vacuum()
     @named vy = Vacuum()
     @named pd = Photodetector()
@@ -59,22 +59,18 @@ end
 
 # ## The DC fringe
 #
-# Stepping the arm-length difference through half a wavelength sweeps the
-# antisymmetric port from dark to bright and back; the symmetric port (back
-# toward the laser) carries the rest of the power.
+# Stepping the differential tuning through ``\pi/2`` (a quarter wavelength of
+# end-mirror motion) sweeps the antisymmetric port from dark to bright; the
+# symmetric port (back toward the laser) carries the rest of the power.
 
 @testset "Michelson DC fringe and energy conservation" begin
-    Lx = 1.0
-    for R in (0.5, 0.3), ΔL in range(0, λ_mi / 2; length = 7)
-        mich, c = michelson(; Lx, Ly = Lx + ΔL, R, laser = Laser)
+    for R in (0.5, 0.3), ϕy in range(0, π / 2; length = 7)
+        mich, c = michelson(; Lx = 1.0, Ly = 1.3, ϕy, R, laser = Laser)
         sys = mtkcompile(mich)
         sol = solve(NonlinearProblem(sys, Dict(u => 0.0 for u in unknowns(sys))))
-        k = 2π / λ_mi
-        P_as = abs2(sqrt(R * (1 - R)) * (cis(2k * (Lx + ΔL)) - cis(2k * Lx)))
-        ## arm phases 2kL ~ 1e7 rad: trig roundoff limits agreement to ~1e-9
-        @test sol[c.pd.P] ≈ P_as atol = 1.0e-8
+        @test sol[c.pd.P] ≈ 4R * (1 - R) * sin(ϕy)^2 atol = 1.0e-14
         P_sym = sol[c.src.p1.i.a[1]]^2 + sol[c.src.p1.i.a[2]]^2
-        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-10
+        @test P_sym + sol[c.pd.P] ≈ 1 rtol = 1.0e-12
     end
 end
 
@@ -85,21 +81,20 @@ end
 # from the laser to the detector, with arm delays ``\tau_{x,y} = L_{x,y}/c``, is
 #
 # ```math
-# G(i\Omega) = r t \left(e^{2i(kL_y - \Omega\tau_y)} - e^{2i(kL_x - \Omega\tau_x)}\right).
+# G(i\Omega) = r t \left(e^{2i\phi_y - 2i\Omega\tau_y} - e^{2i\phi_x - 2i\Omega\tau_x}\right).
 # ```
 
 @testset "to_scattering through a beamsplitter" begin
-    Lx, Ly = 1.0, 1.3
-    mich, _ = michelson(; Lx, Ly, R = 0.4)
+    Lx, Ly, ϕx, ϕy = 1.0, 1.3, 0.2, -0.7
+    mich, _ = michelson(; Lx, Ly, ϕx, ϕy, R = 0.4)
     parts = to_scattering(mich)
     iu = findfirst(==(:src), parts.u)
     iy = findfirst(==(:pd), parts.y)
-    k = 2π / λ_mi
     r, τ = sqrt(0.4), sqrt(0.6)
     for f in (0.0, 1.0e3, 1.0e6, 7.7e7, 3.0e8)
         s = im * 2π * f
         G = parts.M3 * ((Diagonal(exp.(s .* parts.delays)) - parts.M1) \ parts.M2) + parts.M4
-        expected = r * τ * (exp(2im * k * Ly - 2s * Ly / c_mi) - exp(2im * k * Lx - 2s * Lx / c_mi))
-        @test G[iy, iu] ≈ expected rtol = 1.0e-9
+        expected = r * τ * (exp(2im * ϕy - 2s * Ly / c_mi) - exp(2im * ϕx - 2s * Lx / c_mi))
+        @test G[iy, iu] ≈ expected rtol = 1.0e-12
     end
 end
