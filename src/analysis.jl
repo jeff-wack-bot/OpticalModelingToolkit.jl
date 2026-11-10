@@ -102,3 +102,53 @@ function eliminate_algebraic(linres)
         C = h_x + h_z * zx, D = h_u + h_z * zu,
     )
 end
+
+"""
+    steady_state(prob::ODEProblem; t = prob.tspan[1]) -> ODEProblem
+
+`prob` with its initial state replaced by a steady state of its equations at time
+`t`, so a simulation starts at rest instead of from the guesses.
+
+The delay lines of a `PadeDelay` network are differential states, and they start
+empty: begin a simulation there and the cavity fills from nothing, which can kick
+a locked loop out of its linear range. Solving `0 = f(u, p, t)` for every equation,
+differential and algebraic, starts it full. Make any time-dependent drive zero
+(for example with a parameter) while solving, then `remake` the problem with the
+drive on.
+"""
+function steady_state(prob::SciMLBase.ODEProblem; t = prob.tspan[1])
+    f = prob.f
+    nprob = SciMLBase.NonlinearProblem{true}((du, u, p) -> f(du, u, p, t), copy(prob.u0), prob.p)
+    sol = SciMLBase.solve(nprob, SimpleNewtonRaphson(); abstol = 1.0e-14, reltol = 1.0e-14)
+    SciMLBase.successful_retcode(sol) || error("steady_state: no steady state found ($(sol.retcode))")
+    return SciMLBase.remake(prob; u0 = sol.u)
+end
+
+"""
+    frequency_response(mats, fs; precision = 256) -> Array{ComplexF64, 3}
+
+The frequency response ``C (2\\pi i f I - A)^{-1} B + D`` of a linearization
+`mats = (; A, B, C, D)` (from [`linearize_proper`](@ref)) at each frequency in `fs`
+[Hz], indexed `(output, input, frequency)`.
+
+Evaluated in `BigFloat` arithmetic of `precision` bits, because a `PadeDelay`
+model is very stiff: a cavity's delay states sit at ``10^9``–``10^{12}`` /s while
+its suspension is at ``10^2``, and ``\\mathrm{cond}(sI - A)`` at audio frequencies
+is ``10^{11}`` or more. A Float64 solve, including `ControlSystemsBase.freqresp`,
+loses that many digits; on a locked cavity it put a 0.8 % error on a linear
+filter that has nothing to do with the delay. The matrices themselves are exact,
+so evaluating them in extended precision recovers the full answer. The systems
+are small, so this costs milliseconds per frequency.
+"""
+function frequency_response(mats, fs; precision = 256)
+    (; A, B, C, D) = mats
+    return setprecision(BigFloat, precision) do
+        Ab, Bb, Cb, Db = big.(A), big.(B), big.(C), big.(D)
+        out = Array{ComplexF64}(undef, size(C, 1), size(B, 2), length(fs))
+        for (k, f) in enumerate(fs)
+            s = 2 * big(π) * im * big(f)
+            out[:, :, k] = ComplexF64.(Cb * ((s * I - Ab) \ Bb) + Db)
+        end
+        out
+    end
+end
