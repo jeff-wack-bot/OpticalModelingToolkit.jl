@@ -128,7 +128,16 @@ anything nonlinear in the field (radiation pressure, detected power) would be
 linearized around an empty cavity. `linearize_proper` first solves `ẋ = 0` for
 every differential state that `op` doesn't pin.
 
-## 10. Tests are the documentation
+## 10. A shared model is KatScript, and OMT reads a strict subset
+
+A model that both OMT and Finesse.jl run is a `.kat` file, because KatScript is
+the language interferometer models are already written in, and Finesse.jl reads
+all of it. OMT reads a subset ([`parse_kat`](@ref)) and refuses anything else, so
+an unsupported line is an error instead of a silently different model. Finesse's
+results are stored beside the models, so OMT can be checked against them where
+Finesse is not installed. See [Shared models with Finesse.jl](models.md).
+
+## 11. Tests are the documentation
 
 Every file in `test/` is a [Literate](https://github.com/fredrikekre/Literate.jl)
 script: `runtests.jl` runs it, and `docs/make.jl` renders it as an *Examples*

@@ -42,6 +42,20 @@ Inputs are `[input = true]` variables, such as `LaserModulated.δA`/`δQ` or
 `MovableMirror.x`. Pass the value of a nonlinear input such as `x` in `op`,
 since the linearization depends on it.
 
+With `PadeDelay` the model is very stiff, and its frequency response should be
+evaluated with [`frequency_response`](@ref) instead of `freqresp`:
+
+```julia
+G = frequency_response(mats, fs)     # fs in Hz; G[output, input, k]
+```
+
+A cavity's delay states sit at ``10^9``–``10^{12}`` /s, so at audio frequencies
+``\mathrm{cond}(sI - A)`` is ``10^{11}`` or more, and a Float64 solve loses that
+many digits: on a locked cavity, a 0.8 % error on a servo filter unrelated to
+the delays. The matrices are exact; `frequency_response` evaluates them in
+`BigFloat`. Poles, zeros and the time domain are not affected, and an
+`Algebraic` model is not stiff, so `freqresp` is fine there.
+
 The linearization is taken at a steady state. Differential states that `op`
 doesn't set, such as the `PadeDelay` states holding the circulating field, are
 solved for `ẋ = 0` first. Pin states that have no unique steady state, such as

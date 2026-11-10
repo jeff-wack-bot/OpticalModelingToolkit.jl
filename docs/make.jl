@@ -26,7 +26,9 @@ makedocs(;
         "Home" => "index.md",
         "Design" => "design.md",
         "Solver strategy" => "solvers.md",
+        "Shared models with Finesse.jl" => "models.md",
         "Examples" => examples,
+        "Simulation projects" => "projects.md",
         "API" => "api.md",
     ],
 )
