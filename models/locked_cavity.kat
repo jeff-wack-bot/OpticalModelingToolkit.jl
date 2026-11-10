@@ -1,0 +1,28 @@
+# A suspended Fabry-Perot cavity held by a servo on the anti-spring side of
+# resonance: optics, a suspension and electronics in one model.
+#
+# The end mirror is tuned to the half-power point where the optical spring is
+# negative. On its own the suspension is then unstable: the light pushes the
+# mirror further from resonance faster than the pendulum pulls it back. The
+# transmitted power is a linear error signal there, and a lead filter feeds it
+# back as a force on the mirror, with a unity-gain frequency near 100 Hz.
+#
+#     l1 ── m1 ══ sc ══ m2 ── trans (readout)
+#                       │ sus (pendulum)
+#            act ←── servo ←── sense
+#
+# This file is the single source of truth. Finesse.jl solves the closed-loop
+# frequency response; OpticalModelingToolkit.jl simulates the same loop in time,
+# including lock acquisition, which a frequency-domain code cannot do.
+
+laser l1 P=1
+mirror m1 R=0.99 T=0.01 L=0
+mirror m2 R=0.999 T=0.001 L=0 phi=-0.158292
+space s0 l1.p1 m1.p1 L=1
+space sc m1.p2 m2.p2 L=0.1
+pendulum sus m2.mech mass=0.1 fz=20 Qz=2
+
+readout_dc trans m2.p1.o
+zpk servo [-188.49556] [-6283.1853] gain=-3.3e-5
+wire sense trans.DC.o servo.p1.i
+wire act servo.p2.o m2.mech.F_z

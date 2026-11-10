@@ -1,5 +1,9 @@
 # A suspended Fabry-Perot cavity: the end mirror hangs on a pendulum.
 #
+# The end mirror is tuned half a degree past resonance, where radiation pressure
+# acts as a stiff spring: 50 W of input makes the 20 Hz suspension about nine
+# times stiffer, and moves its resonance to about 60 Hz.
+#
 # This file is the single source of truth for the model. Finesse.jl parses all of
 # it and solves the frequency response. OpticalModelingToolkit.jl reads the
 # subset it supports (see src/katscript.jl) and simulates the same network in
@@ -9,7 +13,7 @@
 
 laser l1 P=50
 mirror m1 R=0.99 T=0.01 L=0
-mirror m2 R=0.999 T=0.001 L=0 phi=0
+mirror m2 R=0.999 T=0.001 L=0 phi=0.5
 space s0 l1.p1 m1.p1 L=1
 space sc m1.p2 m2.p2 L=0.1
 pendulum sus m2.mech mass=0.1 fz=20 Qz=2
